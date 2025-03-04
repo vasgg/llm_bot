@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from config import Settings
+from src.config import Settings
 from src.bot.middlewares.auth_middleware import AuthMiddleware
 from src.bot.middlewares.logging_middleware import LoggingMiddleware
 from src.database.database_connector import get_db
@@ -21,13 +21,13 @@ from src.bot.internal.config_dicts import setup_logs
 async def main():
     setup_logs("suslik_robot")
     settings = Settings()
+    storage = MemoryStorage()
 
     bot = Bot(
         token=settings.bot.TOKEN.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 
-    storage = MemoryStorage()
     dispatcher = Dispatcher(storage=storage, settings=settings)
 
     db = get_db(settings)

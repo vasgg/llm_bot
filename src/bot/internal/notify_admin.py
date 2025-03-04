@@ -3,7 +3,7 @@ import os
 
 from aiogram import Bot
 
-from src.bot.config import Settings
+from config import Settings
 
 logger = logging.getLogger(__name__)
 

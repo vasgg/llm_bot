@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.bot.config import Settings
+from config import Settings
 from src.bot.internal.callbacks import SpaceCallbackFactory
 from src.bot.internal.dicts import texts
 from src.bot.internal.enums import SpaceType

@@ -1,8 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from src.bot.internal.callbacks import SpaceCallbackFactory
-from src.bot.internal.enums import SpaceType
+from bot.internal.callbacks import SpaceCallbackFactory
+from bot.internal.enums import SpaceType
 
 
 def choose_space_kb() -> InlineKeyboardMarkup:

@@ -6,16 +6,16 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from src.bot.config import Settings
-from src.bot.middlewares.auth_middleware import AuthMiddleware
-from src.bot.middlewares.logging_middleware import LoggingMiddleware
-from src.database.database_connector import get_db
-from src.bot.internal.commands import set_bot_commands
-from src.bot.internal.notify_admin import on_shutdown, on_startup
-from src.bot.middlewares.session_middleware import DBSessionMiddleware
-from src.bot.middlewares.updates_dumper_middleware import UpdatesDumperMiddleware
-from src.bot.handlers.main_handlers import router as main_router
-from src.bot.internal.config_dicts import setup_logs
+from bot.config import Settings
+from bot.middlewares.auth_middleware import AuthMiddleware
+from bot.middlewares.logging_middleware import LoggingMiddleware
+from database.database_connector import get_db
+from bot.internal.commands import set_bot_commands
+from bot.internal.notify_admin import on_shutdown, on_startup
+from bot.middlewares.session_middleware import DBSessionMiddleware
+from bot.middlewares.updates_dumper_middleware import UpdatesDumperMiddleware
+from bot.handlers.main_handlers import router as main_router
+from bot.internal.config_dicts import setup_logs
 
 
 async def main():

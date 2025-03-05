@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import BOOLEAN, BigInteger, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from src.bot.internal.enums import SpaceType
+from bot.internal.enums import SpaceType
 
 
 class Base(DeclarativeBase):
@@ -11,9 +11,7 @@ class Base(DeclarativeBase):
     __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class User(Base):

@@ -8,12 +8,12 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import Settings
-from src.bot.internal.callbacks import SpaceCallbackFactory
-from src.bot.internal.dicts import texts
-from src.bot.internal.enums import SpaceType
-from src.bot.internal.keyboards import choose_space_kb
-from src.bot.internal.states import States
-from src.database.models import User
+from bot.internal.callbacks import SpaceCallbackFactory
+from bot.internal.dicts import texts
+from bot.internal.enums import SpaceType
+from bot.internal.keyboards import choose_space_kb
+from bot.internal.states import States
+from database.models import User
 
 router = Router()
 
@@ -45,7 +45,7 @@ async def command_handler(
                 reply_markup=choose_space_kb(),
             )
         else:
-            await message.answer('...')
+            await message.answer("...")
         # await message.answer(texts['begin'])
 
 
@@ -73,9 +73,7 @@ async def players_multiselect_handler(
 
 
 @router.message(StateFilter(States))
-async def input_entity(
-    message: Message, user: User, state: FSMContext, db_session: AsyncSession
-) -> None:
+async def input_entity(message: Message, user: User, state: FSMContext, db_session: AsyncSession) -> None:
     current_state = await state.get_state()
     user_input = str(message.text)
     match current_state:
@@ -83,26 +81,18 @@ async def input_entity(
             user.area = user_input
             if not user.budget:
                 text_budget = (
-                    texts["indoor_budget"]
-                    if user.space_type == SpaceType.INDOOR
-                    else texts["outdoor_budget"]
+                    texts["indoor_budget"] if user.space_type == SpaceType.INDOOR else texts["outdoor_budget"]
                 )
                 await message.answer(text=text_budget)
                 await state.set_state(States.INPUT_BUDGET)
         case States.INPUT_BUDGET:
             user.budget = str(user_input)
             budget_reply = (
-                texts["indoor_budget_reply"]
-                if user.space_type == SpaceType.INDOOR
-                else texts["outdoor_budget_reply"]
+                texts["indoor_budget_reply"] if user.space_type == SpaceType.INDOOR else texts["outdoor_budget_reply"]
             )
             await message.answer(text=budget_reply)
             if not user.geography:
-                text_geo = (
-                    texts["geo_indoor"]
-                    if user.space_type == SpaceType.INDOOR
-                    else texts["geo_outdoor"]
-                )
+                text_geo = texts["geo_indoor"] if user.space_type == SpaceType.INDOOR else texts["geo_outdoor"]
                 await asyncio.sleep(4)
                 await message.answer(text=text_geo)
                 await state.set_state(States.INPUT_GEOGRAPHY)
@@ -112,9 +102,7 @@ async def input_entity(
             await message.answer(text=text)
             await asyncio.sleep(4)
             if not user.indoor_room and user.space_type == SpaceType.INDOOR:
-                room_text = random.choice(
-                    [texts["geo_indoor_room_1"], texts["geo_indoor_room_2"]]
-                )
+                room_text = random.choice([texts["geo_indoor_room_1"], texts["geo_indoor_room_2"]])
                 await message.answer(text=room_text)
                 next_state = States.INPUT_ROOM
             if not user.style and user.space_type == SpaceType.OUTDOOR:
@@ -137,9 +125,7 @@ async def input_entity(
             await asyncio.sleep(4)
             if not user.interests:
                 text_interests = (
-                    texts["indoor_interests"]
-                    if user.space_type == SpaceType.INDOOR
-                    else texts["outdoor_interests"]
+                    texts["indoor_interests"] if user.space_type == SpaceType.INDOOR else texts["outdoor_interests"]
                 )
                 await message.answer(text_interests)
                 await state.set_state(States.INPUT_INTERESTS)

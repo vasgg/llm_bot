@@ -1,8 +1,8 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
-from src.bot.internal.config_dicts import assign_config_dict
-from src.bot.internal.enums import Stage
+from bot.internal.config_dicts import assign_config_dict
+from bot.internal.enums import Stage
 
 
 class BotConfig(BaseSettings):
@@ -29,9 +29,7 @@ class DBConfig(BaseSettings):
     @property
     def get_db_connection_string(self):
         return SecretStr(
-            f"postgresql+asyncpg://"
-            f"{self.USER}:{self.PASSWORD.get_secret_value()}@"
-            f"{self.HOST}:{self.PORT}/{self.NAME}"
+            f"postgresql+asyncpg://{self.USER}:{self.PASSWORD.get_secret_value()}@{self.HOST}:{self.PORT}/{self.NAME}"
         )
 
 

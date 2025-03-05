@@ -27,9 +27,7 @@ def upgrade() -> None:
         sa.Column("username", sa.String(), nullable=False),
         sa.Column("is_subscribed", sa.BOOLEAN(), nullable=False),
         sa.Column("expired_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column(
-            "space_type", sa.Enum("INDOOR", "OUTDOOR", name="spacetype"), nullable=True
-        ),
+        sa.Column("space_type", sa.Enum("INDOOR", "OUTDOOR", name="spacetype"), nullable=True),
         sa.Column("budget", sa.Integer(), nullable=True),
         sa.Column("geography", sa.String(), nullable=True),
         sa.Column("style", sa.String(), nullable=True),

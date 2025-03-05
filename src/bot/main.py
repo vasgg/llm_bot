@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from src.config import Settings
+from src.bot.config import Settings
 from src.bot.middlewares.auth_middleware import AuthMiddleware
 from src.bot.middlewares.logging_middleware import LoggingMiddleware
 from src.database.database_connector import get_db

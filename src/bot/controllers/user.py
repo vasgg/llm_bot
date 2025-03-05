@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 async def add_user_to_db(user, db_session: AsyncSession) -> BotUser:
-    new_user = User(
+    new_user = BotUser(
         tg_id=user.id, fullname=user.full_name, username=compose_username(user)
     )
     db_session.add(new_user)

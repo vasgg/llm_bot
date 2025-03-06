@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from openai import AsyncOpenAI
 
 from bot.config import Settings
 from bot.middlewares.auth_middleware import AuthMiddleware
@@ -27,8 +28,9 @@ async def main():
         token=settings.bot.TOKEN.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
+    openai_client = AsyncOpenAI(api_key=settings.gpt.OPENAI_API_KEY.get_secret_value())
 
-    dispatcher = Dispatcher(storage=storage, settings=settings)
+    dispatcher = Dispatcher(storage=storage, settings=settings, openai_client=openai_client)
 
     db = get_db(settings)
     db_session_middleware = DBSessionMiddleware(db)

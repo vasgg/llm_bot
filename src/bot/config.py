@@ -9,9 +9,18 @@ class BotConfig(BaseSettings):
     STAGE: Stage
     ADMINS: list[int]
     TOKEN: SecretStr
-    OPENAI_API_KEY: SecretStr
 
     model_config = assign_config_dict(prefix="BOT_")
+
+
+class GPTConfig(BaseSettings):
+    OPENAI_API_KEY: SecretStr
+    MODEL: str
+    TEMPERATURE: float
+    MAX_TOKENS: int
+    PROMPT: str
+
+    model_config = assign_config_dict(prefix="GPT_")
 
 
 class DBConfig(BaseSettings):
@@ -35,6 +44,7 @@ class DBConfig(BaseSettings):
 
 class Settings(BaseSettings):
     bot: BotConfig = BotConfig()
+    gpt: GPTConfig = GPTConfig()
     db: DBConfig = DBConfig()
 
     model_config = assign_config_dict()

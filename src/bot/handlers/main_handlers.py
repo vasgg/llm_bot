@@ -1,13 +1,20 @@
 import asyncio
+import io
 import random
 
 from aiogram import F, Router
+from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.chat_action import ChatActionSender
+from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import Settings
+from bot.controllers.bot import refactor_string
+from bot.controllers.gpt import generate_reply
+from bot.controllers.voice import convert_to_mp3
 from bot.internal.callbacks import SpaceCallbackFactory
 from bot.internal.dicts import texts
 from bot.internal.enums import SpaceType
@@ -18,12 +25,12 @@ from database.models import User
 router = Router()
 
 
-@router.message(F.photo)
-async def handle_photo_info(message: Message, settings: Settings):
-    if message.from_user.id not in settings.bot.ADMINS:
-        return
-    file_name = (message.photo[-1].file_id,)
-    await message.answer(f"<b>File ID:</b> {file_name[0]}")
+# @router.message(F.photo)
+# async def handle_photo_info(message: Message, settings: Settings):
+#     if message.from_user.id not in settings.bot.ADMINS:
+#         return
+#     file_name = (message.photo[-1].file_id,)
+#     await message.answer(f"<b>File ID:</b> {file_name[0]}")
 
 
 @router.message(CommandStart())
@@ -31,7 +38,6 @@ async def command_handler(
     message: Message,
     user: User,
     is_new_user: bool,
-    db_session: AsyncSession,
 ) -> None:
     if is_new_user:
         await message.answer_photo(
@@ -39,14 +45,14 @@ async def command_handler(
             caption=texts["welcome"],
         )
     else:
-        if user.space_type is None:
-            await message.answer(
-                text=texts["space"],
-                reply_markup=choose_space_kb(),
-            )
-        else:
-            await message.answer("...")
-        # await message.answer(texts['begin'])
+        # if user.space_type is None:
+        #     await message.answer(
+        #         text=texts["space"],
+        #         reply_markup=choose_space_kb(),
+        #     )
+        # else:
+        #     await message.answer("...")
+        await message.answer(texts['begin'])
 
 
 @router.callback_query(SpaceCallbackFactory.filter())
@@ -145,3 +151,47 @@ async def input_entity(message: Message, user: User, state: FSMContext, db_sessi
             )
             await message.answer(text=change_settings_text)
     db_session.add(user)
+
+
+@router.message(F.voice)
+async def handle_voice(
+    message: Message,
+    settings: Settings,
+    state: FSMContext,
+    user: User,
+    openai_client: AsyncOpenAI,
+) -> None:
+    # await show_typing(message.bot, message.chat.id)
+    #
+    # file = await message.bot.get_file(message.voice.file_id)
+    # voice_file = await message.bot.download_file(file.file_path)
+    #
+    # transcript = await transcribe_audio(voice_file, openai_client)
+    #
+    # if transcript:
+    #     await process_messages_to_gpt(message, state, user.id, openai_client, transcript)
+    # else:
+    #     await message.reply("Sorry, I couldn't understand your voice message.")
+    #
+    async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
+        voice = message.voice
+        file_info = await message.bot.get_file(voice.file_id)
+        file_path = file_info.file_path
+
+        file = await message.bot.download_file(file_path)
+        audio_data = file.read()
+        mp3_audio = await convert_to_mp3(audio_data)
+        audio_stream = io.BytesIO(mp3_audio)
+        audio_stream.name = 'audio.mp3'
+
+        try:
+            transcription = await openai_client.audio.transcriptions.create(
+                file=audio_stream, model="whisper-1", response_format="text"
+            )
+        except Exception as e:
+            await message.reply("Error transcribing audio: " + str(e))
+            return
+        prompt = settings.gpt.PROMPT.format(transcription)
+        text = await generate_reply(prompt, openai_client, settings)
+        bot_response_escaped = refactor_string(text)
+        await message.answer(bot_response_escaped, parse_mode=ParseMode.MARKDOWN_V2)

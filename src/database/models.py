@@ -1,9 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import BOOLEAN, BigInteger, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import BOOLEAN, BigInteger, DateTime, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from bot.internal.enums import SpaceType
 
 
 class Base(DeclarativeBase):
@@ -20,32 +18,17 @@ class User(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     fullname: Mapped[str]
     username: Mapped[str]
+    ai_tread: Mapped[str | None]
     is_subscribed: Mapped[bool] = mapped_column(BOOLEAN, default=False)
+    is_intro_shown: Mapped[bool] = mapped_column(BOOLEAN, default=False)
     expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    space_type: Mapped[SpaceType | None]
-    area: Mapped[str | None]
-    indoor_room: Mapped[str | None]
+    space: Mapped[str | None]
     budget: Mapped[str | None]
     geography: Mapped[str | None]
     style: Mapped[str | None]
-    interests: Mapped[str | None]
 
     def __str__(self):
         return f"User fullname={self.fullname}, telegram_id={self.tg_id})"
 
     def __repr__(self):
         return self.__str__()
-
-
-#
-# class UserMessageHistory(Base):
-#     __tablename__ = 'user_message_history'
-#
-#     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', ondelete="CASCADE"))
-#     user_tg_id: Mapped[int] = mapped_column(BigInteger)
-#     bot_tg_id: Mapped[int | None] = mapped_column(BigInteger)
-#     is_from_user: Mapped[bool] = mapped_column(BOOLEAN, default=True)
-#     chat_id: Mapped[int] = mapped_column(BigInteger)
-#     user_message_text: Mapped[str | None] = mapped_column(String(4096))
-#     user_message_type: Mapped[str | None] = mapped_column(String(50))
-#     role: Mapped[Role]

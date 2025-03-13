@@ -1,6 +1,6 @@
-from datetime import datetime
 import logging.config
 import sys
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -15,8 +15,7 @@ class CustomFormatter(logging.Formatter):
             msecs = f"{int(record.msecs):03d}"
             tz = ct.strftime("%z")
             return f"{base_time}.{msecs}{tz}"
-        else:
-            return super().formatTime(record, datefmt)
+        return super().formatTime(record, datefmt)
 
 
 main_template = {

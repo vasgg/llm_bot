@@ -1,22 +1,22 @@
-from asyncio import run
 import logging
+from asyncio import run
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from openai import AsyncOpenAI
 
+from bot.ai_client import AIClient
 from bot.config import Settings
+from bot.handlers.base import router as main_router
+from bot.internal.commands import set_bot_commands
+from bot.internal.config_dicts import setup_logs
+from bot.internal.notify_admin import on_shutdown, on_startup
 from bot.middlewares.auth_middleware import AuthMiddleware
 from bot.middlewares.logging_middleware import LoggingMiddleware
-from database.database_connector import get_db
-from bot.internal.commands import set_bot_commands
-from bot.internal.notify_admin import on_shutdown, on_startup
 from bot.middlewares.session_middleware import DBSessionMiddleware
 from bot.middlewares.updates_dumper_middleware import UpdatesDumperMiddleware
-from bot.handlers.main_handlers import router as main_router
-from bot.internal.config_dicts import setup_logs
+from database.database_connector import get_db
 
 
 async def main():
@@ -28,7 +28,9 @@ async def main():
         token=settings.bot.TOKEN.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
-    openai_client = AsyncOpenAI(api_key=settings.gpt.OPENAI_API_KEY.get_secret_value())
+    openai_client = AIClient(
+        token=settings.gpt.OPENAI_API_KEY.get_secret_value(), assistant_id=settings.gpt.ASSISTANT_ID.get_secret_value()
+    )
 
     dispatcher = Dispatcher(storage=storage, settings=settings, openai_client=openai_client)
 

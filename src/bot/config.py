@@ -2,19 +2,19 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
 from bot.internal.config_dicts import assign_config_dict
-from bot.internal.enums import Stage
 
 
 class BotConfig(BaseSettings):
-    STAGE: Stage
     ADMINS: list[int]
     TOKEN: SecretStr
+    CHAT_LOG_ID: int
 
     model_config = assign_config_dict(prefix="BOT_")
 
 
 class GPTConfig(BaseSettings):
     OPENAI_API_KEY: SecretStr
+    ASSISTANT_ID: SecretStr
     MODEL: str
     TEMPERATURE: float
     MAX_TOKENS: int

@@ -1,8 +1,10 @@
 import asyncio
-import io
+from io import BytesIO
 import logging
 
-from openai import AsyncOpenAI
+from aiogram.types import Message
+
+from bot.ai_client import AIClient
 
 
 async def convert_to_mp3(audio: bytes) -> bytes:
@@ -31,17 +33,34 @@ async def convert_to_mp3(audio: bytes) -> bytes:
         raise RuntimeError("FFmpeg is not installed or not found in PATH.")
 
 
-async def transcribe_audio(audio_file, openai_client: AsyncOpenAI) -> str | None:
+async def process_voice(message: Message, openai_client: AIClient) -> str | None:
     try:
-        ogg_audio = audio_file.read()
-        mp3_audio = await convert_to_mp3(ogg_audio)
-        audio_stream = io.BytesIO(mp3_audio)
+        voice = message.voice
+        file_info = await message.bot.get_file(voice.file_id)
+        audio_bytes = await message.bot.download_file(file_info.file_path)
+        audio_data = audio_bytes.read()
+
+        mp3_audio = await convert_to_mp3(audio_data)
+        audio_stream = BytesIO(mp3_audio)
         audio_stream.name = "audio.mp3"
-        transcript = await openai_client.audio.transcriptions.create(
-            file=audio_stream, model="whisper-1", response_format="text"
+
+        transcription_response = await openai_client.client.audio.transcriptions.create(
+            file=audio_stream, model="whisper-1", response_format="text", language="ru"
         )
-        return transcript if transcript else None
+        return transcription_response.strip()
 
     except Exception as e:
-        logging.exception(f"Error in transcription: {e}")
+        logging.exception(f"Unexpected transcription error: {e}")
+        await message.reply("Произошла непредвиденная ошибка при распознавании. Пожалуйста, попробуйте позже.")
+        return None
+
+
+async def extract_text_from_message(message: Message, openai_client: AIClient) -> str | None:
+    if message.voice:
+        transcription = await process_voice(message, openai_client)
+        return transcription
+    elif message.text:
+        return message.text.strip()
+    else:
+        await message.reply("Пожалуйста, ответьте текстом или голосовым сообщением.")
         return None

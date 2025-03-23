@@ -1,4 +1,6 @@
+from asyncio import sleep
 import logging
+from random import randint
 import re
 
 logger = logging.getLogger(__name__)
@@ -37,3 +39,7 @@ def refactor_string(string: str) -> str:
         lines[i] = f"*{lines[i]}*"
 
     return "\n".join(lines)
+
+
+async def imitate_typing(delay_from=2, delay_to=4):
+    await sleep(randint(delay_from, delay_to))

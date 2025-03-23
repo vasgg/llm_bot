@@ -8,7 +8,9 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.ai_client import AIClient
 from bot.config import Settings
-from bot.handlers.base import router as main_router
+from bot.handlers.base import router as base_router
+from bot.handlers.media import router as media_router
+from bot.handlers.payment import router as payment_router
 from bot.internal.commands import set_bot_commands
 from bot.internal.config_dicts import setup_logs
 from bot.internal.notify_admin import on_shutdown, on_startup
@@ -48,7 +50,9 @@ async def main():
     dispatcher.message.middleware.register(LoggingMiddleware())
     dispatcher.callback_query.middleware.register(LoggingMiddleware())
     dispatcher.include_routers(
-        main_router,
+        base_router,
+        media_router,
+        payment_router,
     )
 
     logging.info("suslik robot started")

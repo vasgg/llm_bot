@@ -1,6 +1,9 @@
 import logging
 
 from openai import AsyncOpenAI, BadRequestError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -13,14 +16,9 @@ class AIClient:
     async def delete_thread(self, thread_id: str):
         await self.client.beta.threads.delete(thread_id)
 
-    async def new_thread(self, initial_message: str | None = None) -> str:
+    async def new_thread(self) -> str:
         thread = await self.client.beta.threads.create()
         logging.debug(f"Created new thread {thread.id}")
-
-        if initial_message:
-            await self.client.beta.threads.messages.create(thread_id=thread.id, role="user", content=initial_message)
-            logging.debug(f"Initial context added to thread {thread.id}")
-
         return thread.id
 
     async def get_response(self, ai_thread_id: str, text: str) -> str | None:
@@ -60,7 +58,33 @@ class AIClient:
                 return None
 
         except BadRequestError as e:
-            logging.exception(f"OpenAI API Error: {e}")
+            logger.exception(f"OpenAI API Error: {e}")
             if e.status_code == 429:
                 return "Превышены лимиты запросов. Пожалуйста, попробуйте позже."
             return "Ошибка при обработке изображения. Убедитесь, что файл корректного формата."
+
+    async def apply_context_to_thread(
+        self,
+        user: User,
+        context: str,
+        db_session: AsyncSession,
+        use_existing_thread: bool = False
+    ) -> str:
+        if use_existing_thread and user.ai_thread:
+            thread_id = user.ai_thread
+            await self.client.beta.threads.messages.create(
+                thread_id=thread_id,
+                role="user",
+                content=context
+            )
+        else:
+            thread = await self.client.beta.threads.create()
+            thread_id = thread.id
+            await self.client.beta.threads.messages.create(thread_id=thread_id, role="user", content=context)
+            user.ai_thread = thread_id
+
+        user.is_context_added = True
+        db_session.add(user)
+        await db_session.flush()
+        logger.info(f"Added context to thread {thread_id}")
+        return thread_id

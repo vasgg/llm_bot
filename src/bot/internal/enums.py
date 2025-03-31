@@ -21,6 +21,11 @@ class SubscriptionPlan(StrEnum):
     ONE_YEAR_SUBSCRIPTION = auto()
 
 
+class MenuButtons(StrEnum):
+    YES = auto()
+    NO = auto()
+
+
 class SubscriptionStatus(StrEnum):
     INACTIVE = auto()
     ACTIVE = auto()

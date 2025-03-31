@@ -1,8 +1,9 @@
 from aiogram import Bot, types
 
 default_commands = [
-    types.BotCommand(command="/start", description="main menu"),
-    # types.BotCommand(command='/help', description='help menu'),
+    types.BotCommand(command="/start", description="Старт"),
+    types.BotCommand(command="/settings", description="Настройки"),
+    # types.BotCommand(command="/subscription", description="Подписка"),
 ]
 
 

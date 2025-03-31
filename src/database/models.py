@@ -18,9 +18,9 @@ class User(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     fullname: Mapped[str]
     username: Mapped[str]
-    ai_tread: Mapped[str | None]
+    ai_thread: Mapped[str | None]
     is_subscribed: Mapped[bool] = mapped_column(BOOLEAN, default=False)
-    is_intro_shown: Mapped[bool] = mapped_column(BOOLEAN, default=False)
+    is_context_added: Mapped[bool] = mapped_column(BOOLEAN, default=False)
     expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     space: Mapped[str | None]
     budget: Mapped[str | None]

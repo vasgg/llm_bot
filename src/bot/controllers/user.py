@@ -51,11 +51,12 @@ async def ask_next_question(user: User, index: int) -> tuple:
     return None, None
 
 
-def generate_user_context(user: User) -> str:
+def generate_user_context(user: BotUser) -> str:
     return (
         "Контекст пользователя:\n"
-        f"- Пространство: {user.space or 'не указано'}\n"
+        f"- Имя пользователя: {user.fullname}\n"
+        f"- Тип участка: {user.space or 'не указано'}\n"
         f"- Бюджет: {user.budget or 'не указано'}\n"
-        f"- География: {user.geography or 'не указано'}\n"
+        f"- Местоположение: {user.geography or 'не указано'}\n"
         f"- Стиль: {user.style or 'не указан'}\n"
     )

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.ai_client import AIClient
 from bot.config import Settings
 from bot.controllers.bot import refactor_string
-from bot.controllers.gpt import check_ai_thread
+from bot.controllers.gpt import get_or_create_ai_thread
 from bot.controllers.voice import process_voice
 from bot.internal.enums import AIState
 from database.models import User
@@ -23,7 +23,7 @@ logger = getLogger(__name__)
 async def ai_assistant_voice_handler(
     message: Message, openai_client: AIClient, user: User, settings: Settings, db_session: AsyncSession
 ):
-    thread_id = await check_ai_thread(user, openai_client, db_session)
+    thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
     await message.forward(settings.bot.CHAT_LOG_ID)
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
         transcription = await process_voice(message, openai_client)
@@ -46,7 +46,7 @@ async def ai_assistant_photo_handler(
         )
         return
 
-    thread_id = await check_ai_thread(user, openai_client, db_session)
+    thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
     await message.forward(settings.bot.CHAT_LOG_ID)
 
     user_text = message.caption or "Пользователь отправил изображение без дополнительного текста."

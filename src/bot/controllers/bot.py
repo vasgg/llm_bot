@@ -41,5 +41,5 @@ def refactor_string(string: str) -> str:
     return "\n".join(lines)
 
 
-async def imitate_typing(delay_from=2, delay_to=4):
+async def imitate_typing(delay_from=1, delay_to=3):
     await sleep(randint(delay_from, delay_to))

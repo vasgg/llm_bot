@@ -11,7 +11,6 @@ from bot.config import Settings
 from bot.handlers.base import router as base_router
 from bot.handlers.media import router as media_router
 from bot.handlers.payment import router as payment_router
-from bot.internal.commands import set_bot_commands
 from bot.internal.config_dicts import setup_logs
 from bot.internal.notify_admin import on_shutdown, on_startup
 from bot.middlewares.auth_middleware import AuthMiddleware
@@ -42,7 +41,7 @@ async def main():
     dispatcher.update.outer_middleware(UpdatesDumperMiddleware())
     dispatcher.startup.register(on_startup)
     dispatcher.shutdown.register(on_shutdown)
-    dispatcher.startup.register(set_bot_commands)
+    # dispatcher.startup.register(set_bot_commands)
     dispatcher.message.middleware(db_session_middleware)
     dispatcher.callback_query.middleware(db_session_middleware)
     dispatcher.message.middleware(AuthMiddleware())

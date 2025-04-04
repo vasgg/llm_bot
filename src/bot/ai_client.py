@@ -64,19 +64,11 @@ class AIClient:
             return "Ошибка при обработке изображения. Убедитесь, что файл корректного формата."
 
     async def apply_context_to_thread(
-        self,
-        user: User,
-        context: str,
-        db_session: AsyncSession,
-        use_existing_thread: bool = False
+        self, user: User, context: str, db_session: AsyncSession, use_existing_thread: bool = False
     ) -> str:
         if use_existing_thread and user.ai_thread:
             thread_id = user.ai_thread
-            await self.client.beta.threads.messages.create(
-                thread_id=thread_id,
-                role="user",
-                content=context
-            )
+            await self.client.beta.threads.messages.create(thread_id=thread_id, role="user", content=context)
         else:
             thread = await self.client.beta.threads.create()
             thread_id = thread.id

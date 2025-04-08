@@ -29,6 +29,7 @@ async def main():
         token=settings.bot.TOKEN.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
+    await bot.delete_webhook(drop_pending_updates=True)
     openai_client = AIClient(
         token=settings.gpt.OPENAI_API_KEY.get_secret_value(), assistant_id=settings.gpt.ASSISTANT_ID.get_secret_value()
     )

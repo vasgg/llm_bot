@@ -17,7 +17,8 @@ from bot.controllers.gpt import get_or_create_ai_thread
 from bot.controllers.user import ask_next_question, generate_user_context
 from bot.controllers.voice import extract_text_from_message
 from bot.internal.enums import AIState, Form
-from bot.internal.lexicon import ORDER, REACTIONS, replies
+from bot.internal.keyboards import new_dialog_kb
+from bot.internal.lexicon import ORDER, REACTIONS, replies, payment_text
 from database.models import User
 
 router = Router()
@@ -46,12 +47,12 @@ async def command_handler(
             await message.answer(question)
         else:
             await sleep(1)
-            await message.answer(replies[1].format(fullname=user.fullname))
+            # await message.answer(replies[1].format(fullname=user.fullname))
             # user.is_context_added = True
-            # db_session.add(user)
-            # await db_session.flush()
-            await imitate_typing()
-            await state.set_state(AIState.IN_AI_DIALOG)
+            await message.answer(payment_text['tariffs'], reply_markup=new_dialog_kb())
+
+            # await imitate_typing()
+            # await state.set_state(AIState.IN_AI_DIALOG)
 
 
 @router.message(StateFilter(Form), F.text | F.voice)
@@ -84,8 +85,8 @@ async def form_handler(
             #     await openai_client.apply_context_to_thread(user, user_context, db_session)
             # else:
             await openai_client.apply_context_to_thread(user, user_context, db_session, use_existing_thread=True)
-            await message.answer(replies[3])
-            await state.set_state(AIState.IN_AI_DIALOG)
+            await message.answer(payment_text['tariffs'], reply_markup=new_dialog_kb())
+            # await state.set_state(AIState.IN_AI_DIALOG)
         else:
             next_field, next_question = await ask_next_question(user, question_index)
             await state.set_state(getattr(Form, next_field))

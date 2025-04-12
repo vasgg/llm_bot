@@ -64,3 +64,20 @@ async def update_existing_assistant_prompt(
         print(f"Ошибка OpenAI API: {e}")
     except Exception as e:
         print(f"Непредвиденная ошибка: {e}")
+
+
+async def update_existing_assistant_model(
+    client: AsyncOpenAI,
+    assistant_id: str,
+    model: str,
+) -> None:
+    try:
+        await client.beta.assistants.update(
+            assistant_id=assistant_id,
+            model=model
+        )
+        print(f"Модель успешно обновлена у ассистента {assistant_id}")
+    except OpenAIError as e:
+        print(f"Ошибка OpenAI API: {e}")
+    except Exception as e:
+        print(f"Непредвиденная ошибка: {e}")

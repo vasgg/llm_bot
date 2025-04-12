@@ -126,7 +126,7 @@ async def ai_assistant_text_handler(
     await message.forward(settings.bot.CHAT_LOG_ID)
 
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
-        response = await openai_client.get_response(thread_id, message.text)
+        response = await openai_client.get_response(thread_id, message.text, message, user.fullname)
         if response is None:
             await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
             return

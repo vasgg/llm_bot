@@ -27,9 +27,9 @@ class AIClient:
     async def get_response(self, ai_thread_id: str, text: str, message: Message, fullname: str) -> str | None:
         runs = await self.client.beta.threads.runs.list(thread_id=ai_thread_id, limit=1)
         if runs.data and runs.data[0].status in ("queued", "in_progress"):
-            logger.info(f"Waiting for active run {runs.data[0].id} in thread {ai_thread_id}")
+            logger.info(f"Active run detected {runs.data[0].id} in thread {ai_thread_id}")
             await message.answer(replies[4].format(fullname=fullname))
-            await self.wait_for_run_completion(ai_thread_id, runs.data[0].id)
+            return None
 
         await self.client.beta.threads.messages.create(thread_id=ai_thread_id, role="user", content=text)
         run = await self.client.beta.threads.runs.create(thread_id=ai_thread_id, assistant_id=self.assistant_id)
@@ -46,9 +46,9 @@ class AIClient:
         try:
             runs = await self.client.beta.threads.runs.list(thread_id=thread_id, limit=1)
             if runs.data and runs.data[0].status in ("queued", "in_progress"):
-                logger.info(f"Waiting for active run {runs.data[0].id} in thread {thread_id}")
+                logger.info(f"Active run detected {runs.data[0].id} in thread {thread_id}")
                 await message.answer(replies[4].format(fullname=fullname))
-                await self.wait_for_run_completion(thread_id, runs.data[0].id)
+                return None
 
             uploaded_file = await self.client.files.create(
                 file=("image.png", image_bytes, "image/png"), purpose="assistants"

@@ -29,7 +29,7 @@ async def ai_assistant_voice_handler(
         transcription = await process_voice(message, openai_client)
         response = await openai_client.get_response(thread_id, transcription, message, user.fullname)
         if response is None:
-            await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
+            # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
             return
         cleaned_response = refactor_string(response)
         msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
@@ -68,7 +68,7 @@ async def ai_assistant_photo_handler(
             )
 
             if response is None:
-                await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
+                # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
                 return
 
             cleaned_response = refactor_string(response)

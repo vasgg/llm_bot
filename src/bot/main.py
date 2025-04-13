@@ -50,9 +50,9 @@ async def main():
     dispatcher.message.middleware.register(LoggingMiddleware())
     dispatcher.callback_query.middleware.register(LoggingMiddleware())
     dispatcher.include_routers(
+        payment_router,
         base_router,
         media_router,
-        payment_router,
     )
 
     logging.info("suslik robot started")

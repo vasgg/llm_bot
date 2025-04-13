@@ -28,6 +28,8 @@ async def get_user_from_db_by_tg_id(telegram_id: int, db_session: AsyncSession) 
 
 async def update_user_expiration(user: User, duration: relativedelta, db_session: AsyncSession):
     current_time = datetime.now(UTC)
+    if user.expired_at is None:
+        user.expired_at = current_time
     if user.expired_at > current_time:
         user.expired_at += duration
     else:

@@ -64,7 +64,11 @@ async def ai_assistant_photo_handler(
             )
 
             response = await openai_client.get_response_with_image(
-                thread_id=thread_id, text=prompt_text, image_bytes=image_bytes, message=message, fullname=user.fullname
+                thread_id=thread_id,
+                text=prompt_text,
+                image_bytes=image_bytes,
+                message=message,
+                fullname=user.fullname,
             )
 
             if response is None:

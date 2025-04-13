@@ -1,15 +1,15 @@
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.internal.callbacks import NewDialogCallbackFactory
-from bot.internal.enums import MenuButtons
+from bot.internal.callbacks import SubscriptionCallbackFactory
+from bot.internal.enums import SubscriptionPlan
 
 
-def new_dialog_kb() -> InlineKeyboardMarkup:
+def subscription_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for text, callback in [
-        ("Да", NewDialogCallbackFactory(choice=MenuButtons.YES).pack()),
-        ("Нет", NewDialogCallbackFactory(choice=MenuButtons.NO).pack()),
+        ("Месяц", SubscriptionCallbackFactory(plan=SubscriptionPlan.ONE_MONTH_SUBSCRIPTION).pack()),
+        ("Годовая подписка", SubscriptionCallbackFactory(plan=SubscriptionPlan.ONE_YEAR_SUBSCRIPTION).pack()),
     ]:
         kb.button(text=text, callback_data=callback)
     kb.adjust(1)

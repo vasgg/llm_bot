@@ -7,6 +7,8 @@ from bot.internal.config_dicts import assign_config_dict
 class BotConfig(BaseSettings):
     ADMINS: list[int]
     TOKEN: SecretStr
+    PROVIDER_TOKEN: SecretStr
+    SHOP_ID: int
     CHAT_LOG_ID: int
 
     model_config = assign_config_dict(prefix="BOT_")

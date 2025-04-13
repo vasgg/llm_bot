@@ -8,8 +8,8 @@ from bot.internal.enums import SubscriptionPlan
 def new_dialog_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for text, callback in [
-        ('Месяц', SubscriptionCallbackFactory(plan=SubscriptionPlan.ONE_MONTH_SUBSCRIPTION).pack()),
-        ('Годовая подписка', SubscriptionCallbackFactory(plan=SubscriptionPlan.ONE_YEAR_SUBSCRIPTION).pack()),
+        ("Месяц", SubscriptionCallbackFactory(plan=SubscriptionPlan.ONE_MONTH_SUBSCRIPTION).pack()),
+        ("Годовая подписка", SubscriptionCallbackFactory(plan=SubscriptionPlan.ONE_YEAR_SUBSCRIPTION).pack()),
     ]:
         kb.button(text=text, callback_data=callback)
     kb.adjust(1)

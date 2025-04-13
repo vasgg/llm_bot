@@ -72,10 +72,7 @@ async def update_existing_assistant_model(
     model: str,
 ) -> None:
     try:
-        await client.beta.assistants.update(
-            assistant_id=assistant_id,
-            model=model
-        )
+        await client.beta.assistants.update(assistant_id=assistant_id, model=model)
         print(f"Модель успешно обновлена у ассистента {assistant_id}")
     except OpenAIError as e:
         print(f"Ошибка OpenAI API: {e}")

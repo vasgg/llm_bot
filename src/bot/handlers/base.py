@@ -49,7 +49,7 @@ async def command_handler(
             await sleep(1)
             # await message.answer(replies[1].format(fullname=user.fullname))
             # user.is_context_added = True
-            await message.answer(payment_text['tariffs'], reply_markup=new_dialog_kb())
+            await message.answer(payment_text["tariffs"], reply_markup=new_dialog_kb())
 
             # await imitate_typing()
             # await state.set_state(AIState.IN_AI_DIALOG)
@@ -85,7 +85,7 @@ async def form_handler(
             #     await openai_client.apply_context_to_thread(user, user_context, db_session)
             # else:
             await openai_client.apply_context_to_thread(user, user_context, db_session, use_existing_thread=True)
-            await message.answer(payment_text['tariffs'], reply_markup=new_dialog_kb())
+            await message.answer(payment_text["tariffs"], reply_markup=new_dialog_kb())
             # await state.set_state(AIState.IN_AI_DIALOG)
         else:
             next_field, next_question = await ask_next_question(user, question_index)
@@ -127,9 +127,9 @@ async def ai_assistant_text_handler(
     await message.forward(settings.bot.CHAT_LOG_ID)
 
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
-        response = await openai_client.get_response(thread_id, message.text)
+        response = await openai_client.get_response(thread_id, message.text, message, user.fullname)
         if response is None:
-            await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
+            # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
             return
 
         cleaned_response = refactor_string(response)

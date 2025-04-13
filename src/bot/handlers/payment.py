@@ -4,8 +4,10 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, LabeledPrice, Message, PreCheckoutQuery
 from sqlalchemy.ext.asyncio import AsyncSession
+from dateutil.relativedelta import relativedelta
 
 from bot.config import Settings
+from bot.controllers.user import update_user_expiration
 from bot.internal.callbacks import SubscriptionCallbackFactory
 from bot.internal.enums import SubscriptionPlan
 from bot.internal.keyboards import subscription_kb
@@ -69,12 +71,20 @@ async def payment_handler(
 async def on_successful_payment(
     message: Message,
     user: User,
-    settings: Settings,
     db_session: AsyncSession,
 ):
     payload = message.successful_payment.invoice_payload
+    match payload:
+        case SubscriptionPlan.ONE_MONTH_SUBSCRIPTION:
+            text = payment_text["1 month success"]
+            dutation = relativedelta(months=1)
+        case SubscriptionPlan.ONE_YEAR_SUBSCRIPTION:
+            text = payment_text["1 year success"]
+            dutation = relativedelta(years=1)
+        case _:
+            assert False, 'Unexpected subscription plan'
+    await update_user_expiration(user, dutation, db_session)
     await message.answer(
-        text='Ваша подписка активирована! Приятного пользования!',
-        # reply_markup=connect_vpn_kb(active=True),
+        text=text,
     )
     logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")

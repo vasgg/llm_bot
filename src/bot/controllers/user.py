@@ -1,6 +1,8 @@
+from datetime import UTC, datetime
 import logging
 
 from aiogram.types import User
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import Result, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,15 +26,16 @@ async def get_user_from_db_by_tg_id(telegram_id: int, db_session: AsyncSession) 
     return result.scalar_one_or_none()
 
 
-# async def update_db_user_expiration(user: User, duration: relativedelta, db_session: AsyncSession):
-#     current_time = datetime.now(UTC)
-#     if user.expired_at > current_time:
-#         user.expired_at += duration
-#     else:
-#         user.expired_at = current_time + duration
-#     db_session.add(user)
-#     logger.info(f"Subscription for {user.tg_id} prolonged to {user.expired_at}")
-#     return user.expired_at
+async def update_user_expiration(user: User, duration: relativedelta, db_session: AsyncSession):
+    current_time = datetime.now(UTC)
+    if user.expired_at > current_time:
+        user.expired_at += duration
+    else:
+        user.expired_at = current_time + duration
+    user.is_subscribed = True
+    db_session.add(user)
+    logger.info(f"Subscription for {user.tg_id} prolonged to {user.expired_at}")
+    return user.expired_at
 
 
 def compose_username(user: User):

@@ -118,24 +118,6 @@ async def form_handler(
 #             await message.answer(question)
 
 
-@router.message(AIState.IN_AI_DIALOG, F.text)
-async def ai_assistant_text_handler(
-    message: Message, openai_client: AIClient, user: User, settings: Settings, db_session: AsyncSession
-):
-    thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
-    await message.forward(settings.bot.CHAT_LOG_ID)
-
-    async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
-        response = await openai_client.get_response(thread_id, message.text, message, user.fullname)
-        if response is None:
-            # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
-            return
-
-        cleaned_response = refactor_string(response)
-        msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
-        await msg_answer.forward(settings.bot.CHAT_LOG_ID)
-
-
 # @router.callback_query(NewDialogCallbackFactory.filter())
 # async def dialog_handler(
 #     callback: CallbackQuery,

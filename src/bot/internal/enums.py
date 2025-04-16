@@ -15,9 +15,7 @@ class AIState(StatesGroup):
 
 
 class SubscriptionPlan(StrEnum):
-    ONE_WEEK_DEMO_ACCESS = auto()
     ONE_MONTH_SUBSCRIPTION = auto()
-    SIX_MONTH_SUBSCRIPTION = auto()
     ONE_YEAR_SUBSCRIPTION = auto()
 
 

@@ -9,16 +9,51 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.ai_client import AIClient
 from bot.config import Settings
-from bot.controllers.bot import refactor_string
+from bot.controllers.bot import refactor_string, validate_message_length
 from bot.controllers.gpt import get_or_create_ai_thread
-from bot.controllers.user import get_daily_photo_limit
+from bot.controllers.user import get_daily_photo_limit, check_action_limit
 from bot.controllers.voice import process_voice
 from bot.internal.enums import AIState
+from bot.internal.keyboards import subscription_kb
 from bot.internal.lexicon import replies
 from database.models import User, UserLimit
 
 router = Router()
 logger = getLogger(__name__)
+
+
+@router.message(AIState.IN_AI_DIALOG, F.text)
+async def ai_assistant_text_handler(
+    message: Message, openai_client: AIClient, user: User, settings: Settings, db_session: AsyncSession
+):
+    if not check_action_limit(user, settings):
+        await message.forward(settings.bot.CHAT_LOG_ID)
+        await message.answer(replies["action_limit_exceeded"], reply_markup=subscription_kb())
+        log_text = replies["action_limit_exceeded_log"].format(username=user.username)
+        logger.info(log_text)
+        await message.bot.send_message(settings.bot.CHAT_LOG_ID, log_text)
+        return
+
+    if not validate_message_length(message):
+        await message.answer(replies['message_lenght_limit_exceeded'])
+        logger.info(replies['message_lenght_limit_exceeded_log'].format(username=user.username))
+        return
+
+    thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
+    await message.forward(settings.bot.CHAT_LOG_ID)
+
+    async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
+        response = await openai_client.get_response(thread_id, message.text, message, user.fullname)
+        if response is None:
+            # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
+            return
+
+        cleaned_response = refactor_string(response)
+        msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
+        await msg_answer.forward(settings.bot.CHAT_LOG_ID)
+    if not user.is_subscribed:
+        user.action_count += 1
+    db_session.add(user)
 
 
 @router.message(AIState.IN_AI_DIALOG, F.voice)
@@ -36,6 +71,9 @@ async def ai_assistant_voice_handler(
         cleaned_response = refactor_string(response)
         msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
         await msg_answer.forward(settings.bot.CHAT_LOG_ID)
+    if not user.is_subscribed:
+        user.action_count += 1
+    db_session.add(user)
 
 
 @router.message(AIState.IN_AI_DIALOG, F.photo)
@@ -51,9 +89,7 @@ async def ai_assistant_photo_handler(
     daily_limit: UserLimit = await get_daily_photo_limit(user.tg_id, db_session)
 
     if daily_limit.image_count >= 10:
-        limit_message = await message.answer(
-            text=replies['photo_limit_exceeded']
-        )
+        limit_message = await message.answer(text=replies["photo_limit_exceeded"])
         await message.forward(settings.bot.CHAT_LOG_ID)
         await limit_message.forward(settings.bot.CHAT_LOG_ID)
         return
@@ -90,8 +126,12 @@ async def ai_assistant_photo_handler(
             cleaned_response = refactor_string(response)
             msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
             await msg_answer.forward(settings.bot.CHAT_LOG_ID)
+
             daily_limit.image_count += 1
             db_session.add(daily_limit)
+            if not user.is_subscribed:
+                user.action_count += 1
+                db_session.add(user)
 
         except BadRequestError as e:
             logger.error(f"OpenAI API Error: {e}")

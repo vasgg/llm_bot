@@ -2,6 +2,7 @@ from logging import getLogger
 
 from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, LabeledPrice, Message, PreCheckoutQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 from dateutil.relativedelta import relativedelta
@@ -9,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 from bot.config import Settings
 from bot.controllers.user import update_user_expiration
 from bot.internal.callbacks import SubscriptionCallbackFactory
-from bot.internal.enums import SubscriptionPlan
+from bot.internal.enums import SubscriptionPlan, AIState
 from bot.internal.keyboards import subscription_kb
 from bot.internal.lexicon import payment_text
 from database.models import User
@@ -25,7 +26,7 @@ async def command_buy_handler(
     settings: Settings,
     db_session: AsyncSession,
 ):
-    await message.answer(payment_text['tariffs'], reply_markup=subscription_kb())
+    await message.answer(payment_text["tariffs"], reply_markup=subscription_kb())
 
 
 @router.pre_checkout_query()
@@ -54,7 +55,7 @@ async def payment_handler(
                 LabeledPrice(label="Подписка на 1 год", amount=3900 * 100),
             ]
         case _:
-            assert False, 'Unexpected subscription plan'
+            assert False, "Unexpected subscription plan"
     await callback.bot.send_invoice(
         chat_id=callback.from_user.id,
         title="Оплата подписки",
@@ -63,7 +64,7 @@ async def payment_handler(
         provider_token=settings.bot.PROVIDER_TOKEN.get_secret_value(),
         start_parameter="test",
         currency="RUB",
-        prices=prices
+        prices=prices,
     )
 
 
@@ -71,6 +72,7 @@ async def payment_handler(
 async def on_successful_payment(
     message: Message,
     user: User,
+    state: FSMContext,
     db_session: AsyncSession,
 ):
     payload = message.successful_payment.invoice_payload
@@ -82,9 +84,10 @@ async def on_successful_payment(
             text = payment_text["1 year success"]
             dutation = relativedelta(years=1)
         case _:
-            assert False, 'Unexpected subscription plan'
+            assert False, "Unexpected subscription plan"
     await update_user_expiration(user, dutation, db_session)
     await message.answer(
         text=text,
     )
+    await state.set_state(AIState.IN_AI_DIALOG)
     logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")

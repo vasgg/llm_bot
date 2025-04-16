@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import Result, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bot.config import Settings
 from bot.internal.lexicon import ORDER, QUESTIONS
 from database.models import User as BotUser, UserLimit
 
@@ -76,3 +77,15 @@ async def get_daily_photo_limit(telegram_id: int, db_session: AsyncSession) -> U
         db_session.add(limit)
         await db_session.flush()
     return limit
+
+
+async def get_all_users_with_active_subscription(db_session: AsyncSession) -> list[BotUser]:
+    query = select(BotUser).filter(BotUser.is_subscribed)
+    result = await db_session.execute(query)
+    return list(result.scalars().all())
+
+
+def check_action_limit(user: BotUser, settings: Settings) -> bool:
+    if not user.is_subscribed and user.action_count >= settings.bot.ACTIONS_THRESHOLD:
+        return False
+    return True

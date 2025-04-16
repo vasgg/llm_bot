@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BOOLEAN, BigInteger, DateTime, func
+from sqlalchemy import BOOLEAN, BigInteger, DateTime, ForeignKey, Integer, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -27,8 +27,9 @@ class User(Base):
     geography: Mapped[str | None]
     style: Mapped[str | None]
 
-    def __str__(self):
-        return f"User fullname={self.fullname}, telegram_id={self.tg_id})"
 
-    def __repr__(self):
-        return self.__str__()
+class UserLimit(Base):
+    __tablename__ = "user_limits"
+
+    tg_id: Mapped[int] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"))
+    image_count: Mapped[int] = mapped_column(Integer, default=0)

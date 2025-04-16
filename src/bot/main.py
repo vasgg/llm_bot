@@ -1,5 +1,5 @@
 import logging
-from asyncio import run
+from asyncio import create_task, run
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -56,7 +56,7 @@ async def main():
     )
 
     logging.info("suslik robot started")
-    await dispatcher.start_polling(bot)
+    await dispatcher.start_polling(bot, skip_updates=True)
 
 
 def run_main():

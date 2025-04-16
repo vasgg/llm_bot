@@ -7,7 +7,7 @@ from sqlalchemy import Result, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.internal.lexicon import ORDER, QUESTIONS
-from database.models import User as BotUser
+from database.models import User as BotUser, UserLimit
 
 logger = logging.getLogger(__name__)
 
@@ -65,3 +65,14 @@ def generate_user_context(user: BotUser) -> str:
         f"- Местоположение: {user.geography or 'не указано'}\n"
         f"- Стиль: {user.style or 'не указан'}\n"
     )
+
+
+async def get_daily_photo_limit(telegram_id: int, db_session: AsyncSession) -> UserLimit:
+    query = select(UserLimit).filter(UserLimit.tg_id == telegram_id)
+    limit = await db_session.execute(query)
+    limit = limit.scalar_one_or_none()
+    if not limit:
+        limit = UserLimit(tg_id=telegram_id)
+        db_session.add(limit)
+        await db_session.flush()
+    return limit

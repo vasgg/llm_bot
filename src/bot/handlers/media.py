@@ -11,9 +11,11 @@ from bot.ai_client import AIClient
 from bot.config import Settings
 from bot.controllers.bot import refactor_string
 from bot.controllers.gpt import get_or_create_ai_thread
+from bot.controllers.user import get_daily_photo_limit
 from bot.controllers.voice import process_voice
 from bot.internal.enums import AIState
-from database.models import User
+from bot.internal.lexicon import replies
+from database.models import User, UserLimit
 
 router = Router()
 logger = getLogger(__name__)
@@ -44,6 +46,16 @@ async def ai_assistant_photo_handler(
         await message.answer(
             "Пожалуйста, отправляйте только по одному изображению за раз, чтобы я мог корректно ответить."
         )
+        return
+
+    daily_limit: UserLimit = await get_daily_photo_limit(user.tg_id, db_session)
+
+    if daily_limit.image_count >= 10:
+        limit_message = await message.answer(
+            text=replies['photo_limit_exceeded']
+        )
+        await message.forward(settings.bot.CHAT_LOG_ID)
+        await limit_message.forward(settings.bot.CHAT_LOG_ID)
         return
 
     thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
@@ -78,6 +90,8 @@ async def ai_assistant_photo_handler(
             cleaned_response = refactor_string(response)
             msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
             await msg_answer.forward(settings.bot.CHAT_LOG_ID)
+            daily_limit.image_count += 1
+            db_session.add(daily_limit)
 
         except BadRequestError as e:
             logger.error(f"OpenAI API Error: {e}")

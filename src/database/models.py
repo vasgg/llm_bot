@@ -19,6 +19,7 @@ class User(Base):
     fullname: Mapped[str]
     username: Mapped[str]
     ai_thread: Mapped[str | None]
+    action_count: Mapped[int] = mapped_column(Integer, default=0)
     is_subscribed: Mapped[bool] = mapped_column(BOOLEAN, default=False)
     is_context_added: Mapped[bool] = mapped_column(BOOLEAN, default=False)
     expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

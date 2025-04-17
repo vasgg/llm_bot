@@ -35,8 +35,8 @@ async def ai_assistant_text_handler(
         return
 
     if not validate_message_length(message):
-        await message.answer(replies['message_lenght_limit_exceeded'])
-        logger.info(replies['message_lenght_limit_exceeded_log'].format(username=user.username))
+        await message.answer(replies["message_lenght_limit_exceeded"])
+        logger.info(replies["message_lenght_limit_exceeded_log"].format(username=user.username))
         return
 
     thread_id = await get_or_create_ai_thread(user, openai_client, db_session)

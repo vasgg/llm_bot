@@ -102,6 +102,7 @@ async def daily_routine(
             await session.commit()
         await sleep(ONE_DAY)
 
+
 def validate_message_length(
     message: Message,
 ) -> bool:

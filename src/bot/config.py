@@ -1,7 +1,7 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
-from bot.internal.config_dicts import assign_config_dict
+from bot.internal.helpers import assign_config_dict
 
 
 class BotConfig(BaseSettings):
@@ -48,3 +48,7 @@ class Settings(BaseSettings):
     db: DBConfig = DBConfig()
 
     model_config = assign_config_dict()
+
+
+settings = Settings()
+

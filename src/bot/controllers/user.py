@@ -62,9 +62,7 @@ def generate_user_context(user: BotUser) -> str:
         "Контекст пользователя:\n"
         f"- Имя пользователя: {user.fullname}\n"
         f"- Тип участка: {user.space or 'не указано'}\n"
-        f"- Бюджет: {user.budget or 'не указано'}\n"
         f"- Местоположение: {user.geography or 'не указано'}\n"
-        f"- Стиль: {user.style or 'не указан'}\n"
     )
 
 

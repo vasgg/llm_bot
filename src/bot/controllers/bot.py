@@ -4,13 +4,14 @@ from datetime import datetime, timezone
 from random import randint
 import re
 from aiogram import Bot
+from aiogram.fsm.context import FSMContext
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.types import Message
-from aiogram.enums import ParseMode
 
 from bot.config import Settings
-from bot.internal.consts import ONE_DAY, MAX_MESSAGE_LENGTH
+
+from bot.internal.consts import BLOCK_DURATION, ONE_DAY, MAX_MESSAGE_LENGTH
 from database.database_connector import DatabaseConnector
 
 logger = logging.getLogger(__name__)
@@ -103,12 +104,32 @@ async def daily_routine(
         await sleep(ONE_DAY)
 
 
-def validate_message_length(
-    message: Message,
-) -> bool:
-    raw_text = message.text or message.caption
+# def validate_message_length(
+#     message: Message,
+# ) -> bool:
+#     raw_text = message.text or message.caption
+#
+#     if len(raw_text) > MAX_MESSAGE_LENGTH:
+#         return False
+#
+#     return True
 
-    if len(raw_text) > MAX_MESSAGE_LENGTH:
+
+async def validate_message_length(
+    message: Message,
+    state: FSMContext,
+) -> bool:
+    raw_text = message.text or message.caption or ""
+    now = datetime.now()
+    data = await state.get_data()
+    block_until = data.get("block_until")
+
+    if block_until and now < block_until:
         return False
 
+    if len(raw_text) >= MAX_MESSAGE_LENGTH:
+        await state.update_data(block_until=now + BLOCK_DURATION)
+        return False
+
+    await state.update_data(block_until=None)
     return True

@@ -24,9 +24,7 @@ class User(Base):
     is_context_added: Mapped[bool] = mapped_column(BOOLEAN, default=False)
     expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     space: Mapped[str | None]
-    budget: Mapped[str | None]
     geography: Mapped[str | None]
-    style: Mapped[str | None]
 
 
 class UserLimit(Base):

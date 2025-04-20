@@ -2,6 +2,7 @@ from logging import getLogger
 
 from aiogram import F, Router
 from aiogram.enums import ParseMode
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.utils.chat_action import ChatActionSender
 from openai import BadRequestError
@@ -24,7 +25,12 @@ logger = getLogger(__name__)
 
 @router.message(AIState.IN_AI_DIALOG, F.text)
 async def ai_assistant_text_handler(
-    message: Message, openai_client: AIClient, user: User, settings: Settings, db_session: AsyncSession
+    message: Message,
+    openai_client: AIClient,
+    user: User,
+    settings: Settings,
+    state: FSMContext,
+    db_session: AsyncSession
 ):
     if not check_action_limit(user, settings):
         await message.forward(settings.bot.CHAT_LOG_ID)
@@ -34,7 +40,7 @@ async def ai_assistant_text_handler(
         await message.bot.send_message(settings.bot.CHAT_LOG_ID, log_text)
         return
 
-    if not validate_message_length(message):
+    if not validate_message_length(message, state):
         await message.answer(replies["message_lenght_limit_exceeded"])
         logger.info(replies["message_lenght_limit_exceeded_log"].format(username=user.username))
         return

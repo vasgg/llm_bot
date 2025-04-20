@@ -6,41 +6,36 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from bot.ai_client import AIClient
-from bot.config import Settings
-from bot.handlers.base import router as base_router
+from bot.controllers.bot import daily_routine
 from bot.handlers.ai import router as ai_router
-from bot.handlers.payment import router as payment_router
+from bot.handlers.base import router as base_router
 from bot.handlers.command import router as commands_router
+from bot.handlers.payment import router as payment_router
+from bot.ai_client import AIClient
+from bot.config import settings
 from bot.internal.commands import set_bot_commands
-from bot.internal.config_dicts import setup_logs
+from bot.internal.helpers import setup_logs
 from bot.internal.notify_admin import on_shutdown, on_startup
-from bot.middlewares.auth_middleware import AuthMiddleware
-from bot.middlewares.logging_middleware import LoggingMiddleware
-from bot.middlewares.session_middleware import DBSessionMiddleware
-from bot.middlewares.updates_dumper_middleware import UpdatesDumperMiddleware
+from bot.middlewares.auth import AuthMiddleware
+from bot.middlewares.logging import LoggingMiddleware
+from bot.middlewares.session import DBSessionMiddleware
+from bot.middlewares.updates_dumper import UpdatesDumperMiddleware
 from database.database_connector import get_db
 
 
 async def main():
     setup_logs("suslik_robot")
-    settings = Settings()
     storage = MemoryStorage()
-
     bot = Bot(
         token=settings.bot.TOKEN.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
-    await bot.delete_webhook(drop_pending_updates=True)
     openai_client = AIClient(
         token=settings.gpt.OPENAI_API_KEY.get_secret_value(), assistant_id=settings.gpt.ASSISTANT_ID.get_secret_value()
     )
-
     dispatcher = Dispatcher(storage=storage, settings=settings, openai_client=openai_client)
-
     db = get_db(settings)
     db_session_middleware = DBSessionMiddleware(db)
-
     dispatcher.update.outer_middleware(UpdatesDumperMiddleware())
     dispatcher.startup.register(on_startup)
     dispatcher.shutdown.register(on_shutdown)
@@ -57,7 +52,8 @@ async def main():
         base_router,
         ai_router,
     )
-
+    # noinspection PyUnusedLocal
+    daily_task = create_task(daily_routine(bot, settings, db))
     logging.info("suslik robot started")
     await dispatcher.start_polling(bot, skip_updates=True)
 

@@ -25,6 +25,7 @@ class User(Base):
     expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     space: Mapped[str | None]
     geography: Mapped[str | None]
+    request: Mapped[str | None]
 
 
 class UserLimit(Base):

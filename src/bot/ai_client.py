@@ -28,7 +28,7 @@ class AIClient:
         runs = await self.client.beta.threads.runs.list(thread_id=ai_thread_id, limit=1)
         if runs.data and runs.data[0].status in ("queued", "in_progress"):
             logger.info(f"Active run detected {runs.data[0].id} in thread {ai_thread_id}")
-            await message.answer(replies[4].format(fullname=fullname))
+            await message.answer(replies[2].format(fullname=fullname))
             return None
 
         await self.client.beta.threads.messages.create(thread_id=ai_thread_id, role="user", content=text)
@@ -47,7 +47,7 @@ class AIClient:
             runs = await self.client.beta.threads.runs.list(thread_id=thread_id, limit=1)
             if runs.data and runs.data[0].status in ("queued", "in_progress"):
                 logger.info(f"Active run detected {runs.data[0].id} in thread {thread_id}")
-                await message.answer(replies[4].format(fullname=fullname))
+                await message.answer(replies[2].format(fullname=fullname))
                 return None
 
             uploaded_file = await self.client.files.create(

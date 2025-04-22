@@ -15,7 +15,7 @@ from bot.controllers.bot import imitate_typing
 from bot.controllers.user import ask_next_question, generate_user_context
 from bot.controllers.voice import extract_text_from_message
 from bot.internal.enums import AIState, Form
-from bot.internal.lexicon import ORDER, REACTIONS, replies
+from bot.internal.lexicon import ORDER, REACTIONS, payment_text
 from database.models import User
 
 router = Router()
@@ -52,7 +52,9 @@ async def form_handler(
             #     await openai_client.apply_context_to_thread(user, user_context, db_session)
             # else:
             await openai_client.apply_context_to_thread(user, user_context, db_session, use_existing_thread=True)
-            await message.answer(replies[3])
+            await message.answer(payment_text["capability"])
+            await imitate_typing()
+            await message.answer(payment_text["free actions"])
             await state.set_state(AIState.IN_AI_DIALOG)
         else:
             next_field, next_question = await ask_next_question(user, question_index)

@@ -57,6 +57,9 @@ async def command_handler(
                     await imitate_typing()
                     await state.set_state(AIState.IN_AI_DIALOG)
         case "support":
-            ...
+            if user.is_subscribed:
+                ...
+            else:
+                ...
         case _:
             assert False, "Unexpected command"

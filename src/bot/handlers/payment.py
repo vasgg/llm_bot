@@ -19,16 +19,6 @@ router = Router()
 logger = getLogger(__name__)
 
 
-@router.message(Command("buy"))
-async def command_buy_handler(
-    message: Message,
-    user: User,
-    settings: Settings,
-    db_session: AsyncSession,
-):
-    await message.answer(payment_text["tariffs"], reply_markup=subscription_kb())
-
-
 @router.pre_checkout_query()
 async def on_pre_checkout_query(
     pre_checkout_query: PreCheckoutQuery,

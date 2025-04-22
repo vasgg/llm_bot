@@ -5,9 +5,8 @@ from aiogram.fsm.state import State, StatesGroup
 
 class Form(StatesGroup):
     space = State()
-    budget = State()
     geography = State()
-    style = State()
+    request = State()
 
 
 class AIState(StatesGroup):

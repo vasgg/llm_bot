@@ -14,3 +14,10 @@ def subscription_kb() -> InlineKeyboardMarkup:
         kb.button(text=text, callback_data=callback)
     kb.adjust(1)
     return kb.as_markup()
+
+
+
+def unsubscription_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text='Отмена подписки', callback_data='unsubscribe')
+    return kb.as_markup()

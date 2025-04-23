@@ -7,4 +7,5 @@ default_commands = [
 
 
 async def set_bot_commands(bot: Bot) -> None:
+    await bot.delete_my_commands()
     await bot.set_my_commands(default_commands)

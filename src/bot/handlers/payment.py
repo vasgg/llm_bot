@@ -81,3 +81,10 @@ async def on_successful_payment(
     )
     await state.set_state(AIState.IN_AI_DIALOG)
     logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
+
+
+@router.callback_query(F.data == 'unsubscribe')
+async def unsubscribe_handler(
+    callback: CallbackQuery,
+):
+    ...

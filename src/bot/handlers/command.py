@@ -1,11 +1,11 @@
 from asyncio import sleep
-from datetime import UTC
+from datetime import UTC, datetime
 from logging import getLogger
 from random import randint
 
-from aiogram import F, Router
+from aiogram import Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import FSInputFile, Message
+from aiogram.types import FSInputFile
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
@@ -14,8 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.config import Settings
 from bot.controllers.bot import imitate_typing
 from bot.controllers.user import ask_next_question
-from bot.internal.enums import SubscriptionStatus, Form, AIState
-from bot.internal.lexicon import replies
+from bot.internal.enums import Form, AIState
+from bot.internal.keyboards import subscription_kb
+from bot.internal.lexicon import replies, support_text
 from database.models import User
 
 
@@ -58,8 +59,13 @@ async def command_handler(
                     await state.set_state(AIState.IN_AI_DIALOG)
         case "support":
             if user.is_subscribed:
-                ...
+                current_date = datetime.now(user.expired_at.tzinfo)
+                days = (user.expired_at - current_date).days
+                await message.answer(support_text["subscribed"].format(days=days))
             else:
-                ...
+                await message.answer(support_text["unsubscribed"].format(
+                    actions=(settings.bot.ACTIONS_THRESHOLD - user.action_count)),
+                    reply_markup=subscription_kb()
+                )
         case _:
             assert False, "Unexpected command"

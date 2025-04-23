@@ -40,7 +40,7 @@ async def ai_assistant_text_handler(
         await message.bot.send_message(settings.bot.CHAT_LOG_ID, log_text)
         return
 
-    if not validate_message_length(message, state):
+    if not await validate_message_length(message, state):
         await message.answer(replies["message_lenght_limit_exceeded"])
         logger.info(replies["message_lenght_limit_exceeded_log"].format(username=user.username))
         return

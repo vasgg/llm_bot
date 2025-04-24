@@ -39,7 +39,7 @@ async def main():
     dispatcher.update.outer_middleware(UpdatesDumperMiddleware())
     dispatcher.startup.register(on_startup)
     dispatcher.shutdown.register(on_shutdown)
-    dispatcher.startup.register(set_bot_commands)
+    # dispatcher.startup.register(set_bot_commands)
     dispatcher.message.middleware(db_session_middleware)
     dispatcher.callback_query.middleware(db_session_middleware)
     dispatcher.message.middleware(AuthMiddleware())
@@ -52,6 +52,7 @@ async def main():
         base_router,
         ai_router,
     )
+    await set_bot_commands(bot)
     # noinspection PyUnusedLocal
     daily_task = create_task(daily_routine(bot, settings, db))
     logging.info("suslik robot started")

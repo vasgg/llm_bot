@@ -13,7 +13,6 @@ from bot.handlers.command import router as commands_router
 from bot.handlers.payment import router as payment_router
 from bot.ai_client import AIClient
 from bot.config import settings
-from bot.internal.commands import set_bot_commands
 from bot.internal.helpers import setup_logs
 from bot.internal.notify_admin import on_shutdown, on_startup
 from bot.middlewares.auth import AuthMiddleware
@@ -39,7 +38,6 @@ async def main():
     dispatcher.update.outer_middleware(UpdatesDumperMiddleware())
     dispatcher.startup.register(on_startup)
     dispatcher.shutdown.register(on_shutdown)
-    # dispatcher.startup.register(set_bot_commands)
     dispatcher.message.middleware(db_session_middleware)
     dispatcher.callback_query.middleware(db_session_middleware)
     dispatcher.message.middleware(AuthMiddleware())
@@ -52,7 +50,6 @@ async def main():
         base_router,
         ai_router,
     )
-    await set_bot_commands(bot)
     # noinspection PyUnusedLocal
     daily_task = create_task(daily_routine(bot, settings, db))
     logging.info("suslik robot started")

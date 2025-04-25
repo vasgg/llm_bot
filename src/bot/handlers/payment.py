@@ -1,7 +1,6 @@
 from logging import getLogger
 
 from aiogram import F, Router
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, LabeledPrice, Message, PreCheckoutQuery
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +10,6 @@ from bot.config import Settings
 from bot.controllers.user import update_user_expiration
 from bot.internal.callbacks import SubscriptionCallbackFactory
 from bot.internal.enums import SubscriptionPlan, AIState
-from bot.internal.keyboards import subscription_kb
 from bot.internal.lexicon import payment_text
 from database.models import User
 
@@ -55,6 +53,8 @@ async def payment_handler(
         start_parameter="test",
         currency="RUB",
         prices=prices,
+        # need_email=True,
+        # send_email_to_provider=True,
     )
 
 

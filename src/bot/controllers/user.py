@@ -67,7 +67,7 @@ def generate_user_context(user: BotUser) -> str:
     )
 
 
-async def get_daily_photo_limit(telegram_id: int, db_session: AsyncSession) -> UserLimit:
+async def get_user_limit(telegram_id: int, db_session: AsyncSession) -> UserLimit:
     query = select(UserLimit).filter(UserLimit.tg_id == telegram_id)
     limit = await db_session.execute(query)
     limit = limit.scalar_one_or_none()

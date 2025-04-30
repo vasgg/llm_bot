@@ -12,6 +12,7 @@ class BotConfig(BaseSettings):
     CHAT_LOG_ID: int
     UTC_STARTING_MARK: int
     ACTIONS_THRESHOLD: int
+    PICTURES_THRESHOLD: int
 
     model_config = assign_config_dict(prefix="BOT_")
 

@@ -1,5 +1,5 @@
 from asyncio import sleep
-from datetime import UTC, datetime
+from datetime import datetime
 from logging import getLogger
 from random import randint
 
@@ -13,12 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import Settings
 from bot.controllers.bot import imitate_typing
-from bot.controllers.user import ask_next_question
+from bot.controllers.user import ask_next_question, get_user_limit
 from bot.internal.enums import Form, AIState
 from bot.internal.keyboards import subscription_kb
 from bot.internal.lexicon import replies, support_text
-from database.models import User
-
+from database.models import User, UserLimit
 
 router = Router()
 logger = getLogger(__name__)
@@ -61,7 +60,9 @@ async def command_handler(
             if user.is_subscribed:
                 current_date = datetime.now(user.expired_at.tzinfo)
                 days = (user.expired_at - current_date).days
-                await message.answer(support_text["subscribed"].format(days=days))
+                limit: UserLimit = await get_user_limit(user.tg_id, db_session)
+                photos = settings.bot.PICTURES_THRESHOLD - limit.image_count
+                await message.answer(support_text["subscribed"].format(days=days, photos=photos))
             else:
                 await message.answer(support_text["unsubscribed"].format(
                     actions=(settings.bot.ACTIONS_THRESHOLD - user.action_count)),

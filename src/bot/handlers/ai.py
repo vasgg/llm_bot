@@ -12,10 +12,10 @@ from bot.ai_client import AIClient
 from bot.config import Settings
 from bot.controllers.bot import refactor_string, validate_message_length
 from bot.controllers.gpt import get_or_create_ai_thread
-from bot.controllers.user import get_daily_photo_limit, check_action_limit
+from bot.controllers.user import get_user_limit, check_action_limit
 from bot.controllers.voice import process_voice
 from bot.internal.enums import AIState
-from bot.internal.keyboards import subscription_kb
+from bot.internal.keyboards import subscription_kb, refresh_pictures_kb
 from bot.internal.lexicon import replies
 from database.models import User, UserLimit
 
@@ -92,12 +92,14 @@ async def ai_assistant_photo_handler(
         )
         return
 
-    daily_limit: UserLimit = await get_daily_photo_limit(user.tg_id, db_session)
+    limit: UserLimit = await get_user_limit(user.tg_id, db_session)
 
-    if daily_limit.image_count >= 10:
-        limit_message = await message.answer(text=replies["photo_limit_exceeded"])
+    if limit.image_count > settings.bot.PICTURES_THRESHOLD:
+        await message.answer(text=replies["photo_limit_exceeded"], reply_markup=refresh_pictures_kb())
         await message.forward(settings.bot.CHAT_LOG_ID)
-        await limit_message.forward(settings.bot.CHAT_LOG_ID)
+        await message.bot.send_message(
+            settings.bot.CHAT_LOG_ID, replies["pictures_limit_exceeded_log"].format(username=user.username)
+        )
         return
 
     thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
@@ -133,8 +135,8 @@ async def ai_assistant_photo_handler(
             msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
             await msg_answer.forward(settings.bot.CHAT_LOG_ID)
 
-            daily_limit.image_count += 1
-            db_session.add(daily_limit)
+            limit.image_count += 1
+            db_session.add(limit)
             if not user.is_subscribed:
                 user.action_count += 1
                 db_session.add(user)

@@ -17,7 +17,7 @@ def subscription_kb() -> InlineKeyboardMarkup:
 
 
 
-def unsubscription_kb() -> InlineKeyboardMarkup:
+def refresh_pictures_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text='Отмена подписки', callback_data='unsubscribe')
+    kb.button(text='Купить доп. пакет', callback_data='refresh_pictures')
     return kb.as_markup()

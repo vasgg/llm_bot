@@ -1,6 +1,6 @@
 from asyncio import sleep
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from random import randint
 import re
 from aiogram import Bot
@@ -9,7 +9,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.types import Message
 
-from bot.config import Settings
+from bot.config import Settings, settings
+from bot.controllers.user import get_user_counter
 
 from bot.internal.consts import BLOCK_DURATION, ONE_DAY, MAX_MESSAGE_LENGTH
 from database.database_connector import DatabaseConnector
@@ -80,7 +81,7 @@ async def daily_routine(
     await sleep(seconds_to_sleep)
     while True:
         async with db_connector.session_factory() as session:
-            await truncate_user_limit_table(session)
+            # await truncate_user_limit_table(session)
             # for user in await get_all_users_with_active_subscription(session):
             #     utcnow = datetime.now(timezone.utc)
             #     delta = utcnow.date() - user.expired_at
@@ -104,17 +105,6 @@ async def daily_routine(
         await sleep(ONE_DAY)
 
 
-# def validate_message_length(
-#     message: Message,
-# ) -> bool:
-#     raw_text = message.text or message.caption
-#
-#     if len(raw_text) > MAX_MESSAGE_LENGTH:
-#         return False
-#
-#     return True
-
-
 async def validate_message_length(
     message: Message,
     state: FSMContext,
@@ -132,4 +122,28 @@ async def validate_message_length(
         return False
 
     await state.update_data(block_until=None)
+    return True
+
+
+async def validate_image_limit(telegram_id: int, db_session: AsyncSession) -> bool:
+    now = datetime.now(UTC)
+    counter = await get_user_counter(telegram_id, db_session)
+
+    if counter.period_started_at is None:
+        counter.period_started_at = now
+        counter.image_count = 1
+        await db_session.flush()
+        return True
+
+    if now - counter.period_started_at > timedelta(days=settings.bot.PICTURES_WINDOW_DAYS):
+        counter.period_started_at = now
+        counter.image_count = 1
+        await db_session.flush()
+        return True
+
+    if counter.image_count >= settings.bot.PICTURES_THRESHOLD:
+        return False
+
+    counter.image_count += 1
+    await db_session.flush()
     return True

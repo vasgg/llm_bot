@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import Settings
 from bot.internal.lexicon import ORDER, QUESTIONS
-from database.models import User as BotUser, UserLimit
+from database.models import User as BotUser, UserCounters
 
 logger = logging.getLogger(__name__)
 
@@ -67,15 +67,21 @@ def generate_user_context(user: BotUser) -> str:
     )
 
 
-async def get_user_limit(telegram_id: int, db_session: AsyncSession) -> UserLimit:
-    query = select(UserLimit).filter(UserLimit.tg_id == telegram_id)
-    limit = await db_session.execute(query)
-    limit = limit.scalar_one_or_none()
-    if not limit:
-        limit = UserLimit(tg_id=telegram_id)
-        db_session.add(limit)
+async def get_user_counter(telegram_id: int, db_session: AsyncSession) -> UserCounters:
+    query = select(UserCounters).filter(UserCounters.tg_id == telegram_id)
+    counter = await db_session.execute(query)
+    counter = counter.scalar_one_or_none()
+    if not counter:
+        counter = UserCounters(tg_id=telegram_id)
+        db_session.add(counter)
         await db_session.flush()
-    return limit
+    return counter
+
+
+async def reset_user_image_counter(telegram_id: int, db_session: AsyncSession):
+    user_counter: UserCounters = await get_user_counter(telegram_id, db_session)
+    user_counter.image_count = 0
+    await db_session.flush()
 
 
 async def get_all_users_with_active_subscription(db_session: AsyncSession) -> list[BotUser]:
@@ -85,6 +91,8 @@ async def get_all_users_with_active_subscription(db_session: AsyncSession) -> li
 
 
 def check_action_limit(user: BotUser, settings: Settings) -> bool:
+    if user.tg_id in settings.bot.ADMINS:
+        return True
     if not user.is_subscribed and user.action_count >= settings.bot.ACTIONS_THRESHOLD:
         return False
     return True

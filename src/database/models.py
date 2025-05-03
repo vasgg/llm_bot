@@ -28,8 +28,9 @@ class User(Base):
     request: Mapped[str | None]
 
 
-class UserLimit(Base):
-    __tablename__ = "user_limits"
+class UserCounters(Base):
+    __tablename__ = "user_counters"
 
     tg_id: Mapped[int] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"))
+    period_started_at: Mapped[datetime | None]
     image_count: Mapped[int] = mapped_column(Integer, default=0)

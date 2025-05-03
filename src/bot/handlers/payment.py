@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dateutil.relativedelta import relativedelta
 
 from bot.config import Settings
-from bot.controllers.user import update_user_expiration
-from bot.internal.callbacks import SubscriptionCallbackFactory
-from bot.internal.enums import SubscriptionPlan, AIState
-from bot.internal.lexicon import payment_text
+from bot.controllers.user import reset_user_image_counter, update_user_expiration
+from bot.internal.callbacks import PaidEntityCallbackFactory
+from bot.internal.enums import PaidEntity, AIState
+from bot.internal.lexicon import payment_text, replies
 from database.models import User
 
 router = Router()
@@ -24,37 +24,41 @@ async def on_pre_checkout_query(
     await pre_checkout_query.answer(ok=True)
 
 
-@router.callback_query(SubscriptionCallbackFactory.filter())
+@router.callback_query(PaidEntityCallbackFactory.filter())
 async def payment_handler(
     callback: CallbackQuery,
-    callback_data: SubscriptionCallbackFactory,
+    callback_data: PaidEntityCallbackFactory,
     settings: Settings,
 ):
     await callback.answer()
-    match callback_data.plan:
-        case SubscriptionPlan.ONE_MONTH_SUBSCRIPTION:
+    match callback_data.entity:
+        case PaidEntity.ONE_MONTH_SUBSCRIPTION:
             description = "Длительность: 1 месяц"
             prices = [
-                LabeledPrice(label="Подписка на 1 месяц", amount=490 * 100),
+                LabeledPrice(label="Подписка на 1 месяц", amount=290 * 100),
             ]
-        case SubscriptionPlan.ONE_YEAR_SUBSCRIPTION:
+        case PaidEntity.ONE_YEAR_SUBSCRIPTION:
             description = "Длительность: 1 год"
             prices = [
                 LabeledPrice(label="Подписка на 1 год", amount=3900 * 100),
             ]
+        case PaidEntity.PICTURES_COUNTER_REFRESH:
+            description = "Сброс лимита картинок"
+            prices = [
+                LabeledPrice(label="Дополнительные 50 картинок", amount=150 * 100),
+            ]
         case _:
-            assert False, "Unexpected subscription plan"
+            assert False, "Unexpected paid entity"
     await callback.bot.send_invoice(
         chat_id=callback.from_user.id,
-        title="Оплата подписки",
+        title="Оплата",
         description=description,
-        payload=callback_data.plan,
+        payload=callback_data.entity,
         provider_token=settings.bot.PROVIDER_TOKEN.get_secret_value(),
-        start_parameter="test",
         currency="RUB",
         prices=prices,
-        # need_email=True,
-        # send_email_to_provider=True,
+        need_email=True,
+        send_email_to_provider=True,
     )
 
 
@@ -63,28 +67,31 @@ async def on_successful_payment(
     message: Message,
     user: User,
     state: FSMContext,
+    settings: Settings,
     db_session: AsyncSession,
 ):
     payload = message.successful_payment.invoice_payload
-    match payload:
-        case SubscriptionPlan.ONE_MONTH_SUBSCRIPTION:
-            text = payment_text["1 month success"]
-            dutation = relativedelta(months=1)
-        case SubscriptionPlan.ONE_YEAR_SUBSCRIPTION:
-            text = payment_text["1 year success"]
-            dutation = relativedelta(years=1)
-        case _:
-            assert False, "Unexpected subscription plan"
-    await update_user_expiration(user, dutation, db_session)
-    await message.answer(
-        text=text,
+    if payload in (PaidEntity.ONE_YEAR_SUBSCRIPTION, PaidEntity.ONE_YEAR_SUBSCRIPTION):
+        text = (
+            payment_text["1 month success"]
+            if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION
+            else payment_text["1 year success"]
+        )
+        dutation = relativedelta(months=1) if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION else relativedelta(years=1)
+        await update_user_expiration(user, dutation, db_session)
+        await message.answer(
+            text=text,
+        )
+        await state.set_state(AIState.IN_AI_DIALOG)
+        logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
+    else:
+        await reset_user_image_counter(user.tg_id, db_session)
+        await message.answer(text=payment_text["refresh_pictures_limit_success"])
+        logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
+    await message.bot.send_message(
+        settings.bot.CHAT_LOG_ID,
+        replies["user_payment_log"].format(
+            username=user.username,
+            payload=message.successful_payment.invoice_payload,
+        ),
     )
-    await state.set_state(AIState.IN_AI_DIALOG)
-    logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
-
-
-@router.callback_query(F.data == 'unsubscribe')
-async def unsubscribe_handler(
-    callback: CallbackQuery,
-):
-    ...

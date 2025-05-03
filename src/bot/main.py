@@ -10,6 +10,7 @@ from bot.handlers.ai import router as ai_router
 from bot.handlers.base import router as base_router
 from bot.handlers.command import router as commands_router
 from bot.handlers.payment import router as payment_router
+from bot.handlers.errors import router as error_router
 from bot.ai_client import AIClient
 from bot.config import settings
 from bot.internal.helpers import setup_logs
@@ -50,6 +51,7 @@ async def main():
         payment_router,
         base_router,
         ai_router,
+        error_router,
     )
     # noinspection PyUnusedLocal
     # daily_task = create_task(daily_routine(bot, settings, db))

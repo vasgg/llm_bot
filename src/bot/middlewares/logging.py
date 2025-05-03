@@ -1,10 +1,12 @@
-import functools
 import logging
+import functools
 from collections.abc import Awaitable, Callable
 from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
+
+logger = logging.getLogger(__name__)
 
 
 class LoggingMiddleware(BaseMiddleware):
@@ -16,10 +18,10 @@ class LoggingMiddleware(BaseMiddleware):
     ) -> Any:
         try:
             name = self._get_name(handler)
-            logging.info(f"calling {name}")
+            logger.info(f"calling {name}")
         finally:
             res = await handler(event, data)
-        return res
+            return res
 
     def _get_name(self, handler):
         while isinstance(handler, functools.partial):

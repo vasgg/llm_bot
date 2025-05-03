@@ -1,12 +1,11 @@
 import logging
-from asyncio import create_task, run
+from asyncio import run
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from bot.controllers.bot import daily_routine
 from bot.handlers.ai import router as ai_router
 from bot.handlers.base import router as base_router
 from bot.handlers.command import router as commands_router
@@ -19,6 +18,7 @@ from bot.middlewares.auth import AuthMiddleware
 from bot.middlewares.logging import LoggingMiddleware
 from bot.middlewares.session import DBSessionMiddleware
 from bot.middlewares.updates_dumper import UpdatesDumperMiddleware
+from bot.middlewares.user_limit import UserLimitMiddleware
 from database.database_connector import get_db
 
 
@@ -42,6 +42,7 @@ async def main():
     dispatcher.callback_query.middleware(db_session_middleware)
     dispatcher.message.middleware(AuthMiddleware())
     dispatcher.callback_query.middleware(AuthMiddleware())
+    dispatcher.update.middleware(UserLimitMiddleware())
     dispatcher.message.middleware.register(LoggingMiddleware())
     dispatcher.callback_query.middleware.register(LoggingMiddleware())
     dispatcher.include_routers(
@@ -51,7 +52,7 @@ async def main():
         ai_router,
     )
     # noinspection PyUnusedLocal
-    daily_task = create_task(daily_routine(bot, settings, db))
+    # daily_task = create_task(daily_routine(bot, settings, db))
     logging.info("suslik robot started")
     await dispatcher.start_polling(bot, skip_updates=True)
 

@@ -13,9 +13,10 @@ class AIState(StatesGroup):
     IN_AI_DIALOG = State()
 
 
-class SubscriptionPlan(StrEnum):
+class PaidEntity(StrEnum):
     ONE_MONTH_SUBSCRIPTION = auto()
     ONE_YEAR_SUBSCRIPTION = auto()
+    PICTURES_COUNTER_REFRESH = auto()
 
 
 class MenuButtons(StrEnum):

@@ -1,10 +1,10 @@
 from aiogram.filters.callback_data import CallbackData
 
-from bot.internal.enums import MenuButtons, SubscriptionPlan
+from bot.internal.enums import MenuButtons, PaidEntity
 
 
-class SubscriptionCallbackFactory(CallbackData, prefix="subscription"):
-    plan: SubscriptionPlan
+class PaidEntityCallbackFactory(CallbackData, prefix="paid_functions"):
+    entity: PaidEntity
 
 
 class NewDialogCallbackFactory(CallbackData, prefix="new_dialog"):

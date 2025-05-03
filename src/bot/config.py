@@ -13,6 +13,8 @@ class BotConfig(BaseSettings):
     UTC_STARTING_MARK: int
     ACTIONS_THRESHOLD: int
     PICTURES_THRESHOLD: int
+    PICTURES_WINDOW_DAYS: int
+    USERS_THRESHOLD: int
 
     model_config = assign_config_dict(prefix="BOT_")
 
@@ -52,4 +54,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

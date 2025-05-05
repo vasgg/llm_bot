@@ -118,3 +118,5 @@ async def on_successful_payment(
             payload=message.successful_payment.invoice_payload,
         ),
     )
+    await state.set_state(AIState.IN_AI_DIALOG)
+

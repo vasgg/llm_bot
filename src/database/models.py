@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BOOLEAN, BigInteger, DateTime, ForeignKey, Integer, func
+from sqlalchemy import BOOLEAN, BigInteger, DateTime, ForeignKey, Integer, TIMESTAMP, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -32,5 +32,5 @@ class UserCounters(Base):
     __tablename__ = "user_counters"
 
     tg_id: Mapped[int] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"))
-    period_started_at: Mapped[datetime | None]
+    period_started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     image_count: Mapped[int] = mapped_column(Integer, default=0)

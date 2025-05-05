@@ -63,9 +63,12 @@ async def payment_handler(
                         "value": value,
                         "currency": "RUB",
                     },
-                    "vat_code": 1
+                    "vat_code": 1,
+                    "payment_mode": "full_payment",
+                    "payment_subject": "service"
                 }
-            ]
+            ],
+            "tax_system_code": 1
         }
     }
     await callback.bot.send_invoice(

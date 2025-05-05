@@ -1,6 +1,6 @@
 from asyncio import sleep
 import logging
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from random import randint
 import re
 from aiogram import Bot
@@ -126,7 +126,7 @@ async def validate_message_length(
 
 
 async def validate_image_limit(telegram_id: int, db_session: AsyncSession) -> bool:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     counter = await get_user_counter(telegram_id, db_session)
 
     if counter.period_started_at is None:
@@ -135,7 +135,11 @@ async def validate_image_limit(telegram_id: int, db_session: AsyncSession) -> bo
         await db_session.flush()
         return True
 
-    if now - counter.period_started_at > timedelta(days=settings.bot.PICTURES_WINDOW_DAYS):
+    db_time = counter.period_started_at
+    if db_time.tzinfo is None:
+        db_time = db_time.replace(tzinfo=timezone.utc)
+
+    if now - db_time > timedelta(days=settings.bot.PICTURES_WINDOW_DAYS):
         counter.period_started_at = now
         counter.image_count = 1
         await db_session.flush()

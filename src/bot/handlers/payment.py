@@ -1,3 +1,4 @@
+import json
 from logging import getLogger
 
 from aiogram import F, Router
@@ -34,21 +35,39 @@ async def payment_handler(
     match callback_data.entity:
         case PaidEntity.ONE_MONTH_SUBSCRIPTION:
             description = "Длительность: 1 месяц"
+            value = 290
             prices = [
-                LabeledPrice(label="Подписка на 1 месяц", amount=290 * 100),
+                LabeledPrice(label="Подписка на 1 месяц", amount=value * 100),
             ]
         case PaidEntity.ONE_YEAR_SUBSCRIPTION:
             description = "Длительность: 1 год"
+            value = 3900
             prices = [
-                LabeledPrice(label="Подписка на 1 год", amount=3900 * 100),
+                LabeledPrice(label="Подписка на 1 год", amount=value * 100),
             ]
         case PaidEntity.PICTURES_COUNTER_REFRESH:
             description = "Сброс лимита картинок"
+            value = 150
             prices = [
-                LabeledPrice(label="Дополнительные 50 картинок", amount=150 * 100),
+                LabeledPrice(label="Дополнительные 50 картинок", amount=value * 100),
             ]
         case _:
             assert False, "Unexpected paid entity"
+    provider_data = {
+        "receipt": {
+            "items": [
+                {
+                    "description": description,
+                    "quantity": 1,
+                    "amount": {
+                        "value": value,
+                        "currency": "RUB",
+                    },
+                    "vat_code": 1
+                }
+            ]
+        }
+    }
     await callback.bot.send_invoice(
         chat_id=callback.from_user.id,
         title="Оплата",
@@ -59,6 +78,7 @@ async def payment_handler(
         prices=prices,
         need_email=True,
         send_email_to_provider=True,
+        provider_data=json.dumps(provider_data),
     )
 
 

@@ -94,7 +94,7 @@ async def on_successful_payment(
     db_session: AsyncSession,
 ):
     payload = message.successful_payment.invoice_payload
-    if payload in (PaidEntity.ONE_YEAR_SUBSCRIPTION, PaidEntity.ONE_YEAR_SUBSCRIPTION):
+    if payload in (PaidEntity.ONE_MONTH_SUBSCRIPTION, PaidEntity.ONE_YEAR_SUBSCRIPTION):
         text = (
             payment_text["1 month success"]
             if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION

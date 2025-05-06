@@ -35,7 +35,7 @@ async def payment_handler(
     match callback_data.entity:
         case PaidEntity.ONE_MONTH_SUBSCRIPTION:
             description = "Длительность: 1 месяц"
-            value = 290
+            value = 390
             prices = [
                 LabeledPrice(label="Подписка на 1 месяц", amount=value * 100),
             ]

@@ -3,7 +3,7 @@ from logging import getLogger
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, LabeledPrice, Message, PreCheckoutQuery
+from aiogram.types import CallbackQuery, LabeledPrice, Message, PreCheckoutQuery, FSInputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from dateutil.relativedelta import relativedelta
 
@@ -102,14 +102,14 @@ async def on_successful_payment(
         )
         dutation = relativedelta(months=1) if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION else relativedelta(years=1)
         await update_user_expiration(user, dutation, db_session)
-        await message.answer(
-            text=text,
-        )
+        await message.answer_photo(FSInputFile(path='src/bot/data/gardener1.png'), text)
         await state.set_state(AIState.IN_AI_DIALOG)
         logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
     else:
         await reset_user_image_counter(user.tg_id, db_session)
-        await message.answer(text=payment_text["refresh_pictures_limit_success"])
+        await message.answer_photo(
+            FSInputFile(path='src/bot/data/taking_photo.png'), payment_text["refresh_pictures_limit_success"]
+        )
         logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
     await message.bot.send_message(
         settings.bot.CHAT_LOG_ID,

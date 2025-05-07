@@ -57,14 +57,19 @@ async def command_handler(
                     await imitate_typing()
                     await state.set_state(AIState.IN_AI_DIALOG)
         case "support":
+            picture = FSInputFile(path='src/bot/data/with_book.png')
             if user.is_subscribed:
                 current_date = datetime.now(user.expired_at.tzinfo)
                 days = (user.expired_at - current_date).days
                 user_counter: UserCounters = await get_user_counter(user.tg_id, db_session)
                 photos = settings.bot.PICTURES_THRESHOLD - user_counter.image_count
-                await message.answer(support_text["subscribed"].format(days=days, photos=photos))
+                await message.answer_photo(
+                    picture,
+                    support_text["subscribed"].format(days=days, photos=photos)
+                )
             else:
-                await message.answer(
+                await message.answer_photo(
+                    picture,
                     support_text["unsubscribed"].format(actions=(settings.bot.ACTIONS_THRESHOLD - user.action_count)),
                     reply_markup=subscription_kb(),
                 )

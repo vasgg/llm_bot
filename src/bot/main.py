@@ -1,6 +1,7 @@
 import logging
 from asyncio import run
 
+import sentry_sdk
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -13,6 +14,7 @@ from bot.handlers.payment import router as payment_router
 from bot.handlers.errors import router as error_router
 from bot.ai_client import AIClient
 from bot.config import settings
+from bot.internal.enums import Stage
 from bot.internal.helpers import setup_logs
 from bot.internal.notify_admin import on_shutdown, on_startup
 from bot.middlewares.auth import AuthMiddleware
@@ -26,6 +28,17 @@ from database.database_connector import get_db
 async def main():
     setup_logs("suslik_robot")
     storage = MemoryStorage()
+    if settings.bot.SENTRY_DSN and settings.bot.STAGE == Stage.PROD:
+        sentry_sdk.init(
+            dsn=settings.bot.SENTRY_DSN.get_secret_value(),
+            # Set traces_sample_rate to 1.0 to capture 100%
+            # of transactions for performance monitoring.
+            traces_sample_rate=1.0,
+            # Set profiles_sample_rate to 1.0 to profile 100%
+            # of sampled transactions.
+            # We recommend adjusting this value in production.
+            profiles_sample_rate=1.0,
+        )
     bot = Bot(
         token=settings.bot.TOKEN.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),

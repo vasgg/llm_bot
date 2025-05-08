@@ -1,6 +1,7 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
+from bot.internal.enums import Stage
 from bot.internal.helpers import assign_config_dict
 
 
@@ -8,6 +9,7 @@ class BotConfig(BaseSettings):
     ADMINS: list[int]
     TOKEN: SecretStr
     PROVIDER_TOKEN: SecretStr
+    SENTRY_DSN: SecretStr | None = None
     SHOP_ID: int
     CHAT_LOG_ID: int
     UTC_STARTING_MARK: int
@@ -15,6 +17,7 @@ class BotConfig(BaseSettings):
     PICTURES_THRESHOLD: int
     PICTURES_WINDOW_DAYS: int
     USERS_THRESHOLD: int
+    STAGE: Stage
 
     model_config = assign_config_dict(prefix="BOT_")
 

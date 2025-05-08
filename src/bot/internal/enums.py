@@ -30,3 +30,8 @@ class SubscriptionStatus(StrEnum):
     CREATED = auto()
     RENEWED = auto()
     PROLONGED = auto()
+
+
+class Stage(StrEnum):
+    DEV = auto()
+    PROD = auto()

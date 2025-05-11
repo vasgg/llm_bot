@@ -1,11 +1,12 @@
 import logging
 from asyncio import run
 
+from aiogram.fsm.storage.redis import RedisStorage
+from redis.asyncio import Redis
 import sentry_sdk
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.handlers.ai import router as ai_router
 from bot.handlers.base import router as base_router
@@ -27,7 +28,6 @@ from database.database_connector import get_db
 
 async def main():
     setup_logs("suslik_robot")
-    storage = MemoryStorage()
     if settings.bot.SENTRY_DSN and settings.bot.STAGE == Stage.PROD:
         sentry_sdk.init(
             dsn=settings.bot.SENTRY_DSN.get_secret_value(),
@@ -46,6 +46,14 @@ async def main():
     openai_client = AIClient(
         token=settings.gpt.OPENAI_API_KEY.get_secret_value(), assistant_id=settings.gpt.ASSISTANT_ID.get_secret_value()
     )
+    redis_client = Redis(
+        host=settings.redis.HOST,
+        port=settings.redis.PORT,
+        username=settings.redis.USERNAME,
+        password=settings.redis.PASSWORD.get_secret_value(),
+        decode_responses=True,
+    )
+    storage = RedisStorage(redis_client)
     dispatcher = Dispatcher(storage=storage, settings=settings, openai_client=openai_client)
     db = get_db(settings)
     db_session_middleware = DBSessionMiddleware(db)

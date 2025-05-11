@@ -29,6 +29,15 @@ class GPTConfig(BaseSettings):
     model_config = assign_config_dict(prefix="GPT_")
 
 
+class RedisConfig(BaseSettings):
+    HOST: str
+    PORT: int
+    USERNAME: str
+    PASSWORD: SecretStr
+
+    model_config = assign_config_dict(prefix="REDIS_")
+
+
 class DBConfig(BaseSettings):
     USER: str
     PASSWORD: SecretStr
@@ -51,6 +60,7 @@ class DBConfig(BaseSettings):
 class Settings(BaseSettings):
     bot: BotConfig = BotConfig()
     gpt: GPTConfig = GPTConfig()
+    redis: RedisConfig = RedisConfig()
     db: DBConfig = DBConfig()
 
     model_config = assign_config_dict()

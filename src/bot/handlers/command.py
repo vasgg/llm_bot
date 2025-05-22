@@ -15,7 +15,7 @@ from bot.config import Settings
 from bot.controllers.bot import imitate_typing
 from bot.controllers.user import ask_next_question, get_user_counter
 from bot.internal.enums import Form, AIState
-from bot.internal.keyboards import subscription_kb
+from bot.internal.keyboards import subscription_kb, cancel_autopayment_kb
 from bot.internal.lexicon import replies, support_text
 from database.models import User, UserCounters
 
@@ -65,7 +65,8 @@ async def command_handler(
                 photos = settings.bot.PICTURES_THRESHOLD - user_counter.image_count
                 await message.answer_photo(
                     picture,
-                    support_text["subscribed"].format(days=days, photos=photos)
+                    support_text["subscribed"].format(days=days, photos=photos),
+                    reply_markup=cancel_autopayment_kb(),
                 )
             else:
                 await message.answer_photo(

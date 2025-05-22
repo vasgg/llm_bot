@@ -16,6 +16,12 @@ def subscription_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def cancel_autopayment_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Отменить автопродление", callback_data="cancel_autopayment")
+    return kb.as_markup()
+
+
 def refresh_pictures_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(

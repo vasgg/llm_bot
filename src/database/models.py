@@ -21,11 +21,13 @@ class User(Base):
     ai_thread: Mapped[str | None]
     action_count: Mapped[int] = mapped_column(Integer, default=0)
     is_subscribed: Mapped[bool] = mapped_column(BOOLEAN, default=False)
+    is_autopayment_enabled: Mapped[bool] = mapped_column(BOOLEAN, default=False, server_default="false")
     is_context_added: Mapped[bool] = mapped_column(BOOLEAN, default=False)
     expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     space: Mapped[str | None]
     geography: Mapped[str | None]
     request: Mapped[str | None]
+    payment_method_id: Mapped[str | None]
 
 
 class UserCounters(Base):

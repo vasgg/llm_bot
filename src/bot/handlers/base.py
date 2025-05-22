@@ -52,10 +52,11 @@ async def form_handler(
             #     await openai_client.apply_context_to_thread(user, user_context, db_session)
             # else:
             await openai_client.apply_context_to_thread(user, user_context, db_session, use_existing_thread=True)
-            await message.answer_photo(
+            msg = await message.answer_photo(
                 FSInputFile(path='src/bot/data/magic_wand.png'),
                 payment_text["capability"],
             )
+            await msg.pin(disable_notification=True)
             await imitate_typing()
             await message.answer(payment_text["free actions"])
             await state.set_state(AIState.IN_AI_DIALOG)

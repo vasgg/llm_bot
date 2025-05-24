@@ -74,5 +74,3 @@ async def command_handler(
                     support_text["unsubscribed"].format(actions=(settings.bot.ACTIONS_THRESHOLD - user.action_count)),
                     reply_markup=subscription_kb(),
                 )
-        case _:
-            assert False, "Unexpected command"

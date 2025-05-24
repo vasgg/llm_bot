@@ -68,6 +68,8 @@ async def payment_handler(
                     "payment_subject": "service"
                 }
             ],
+            # "capture": True,
+            # "save_payment_method": True,
             "tax_system_code": 1
         }
     }

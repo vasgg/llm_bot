@@ -13,8 +13,8 @@ from database.models import User as BotUser, UserCounters
 logger = logging.getLogger(__name__)
 
 
-async def add_user_to_db(user, db_session: AsyncSession) -> BotUser:
-    new_user = BotUser(tg_id=user.id, fullname=user.full_name, username=compose_username(user))
+async def add_user_to_db(user, db_session: AsyncSession, source: str | None = None) -> BotUser:
+    new_user = BotUser(tg_id=user.id, fullname=user.full_name, username=compose_username(user), source=source)
     db_session.add(new_user)
     await db_session.flush()
     logger.info(f"New user created: {new_user}")

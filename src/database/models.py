@@ -28,6 +28,7 @@ class User(Base):
     geography: Mapped[str | None]
     request: Mapped[str | None]
     payment_method_id: Mapped[str | None]
+    source: Mapped[str | None]
 
 
 class UserCounters(Base):

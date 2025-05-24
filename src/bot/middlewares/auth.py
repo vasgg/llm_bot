@@ -19,6 +19,12 @@ class AuthMiddleware(BaseMiddleware):
         data["is_new_user"] = False
         if not user:
             data["is_new_user"] = True
-            user = await add_user_to_db(event.from_user, db_session)
+            source = None
+            if event.text and event.text.startswith("/start"):
+                parts = event.text.split(maxsplit=1)
+                if len(parts) == 2:
+                    source = parts[1].strip()
+
+            user = await add_user_to_db(event.from_user, db_session, source)
         data["user"] = user
         return await handler(event, data)

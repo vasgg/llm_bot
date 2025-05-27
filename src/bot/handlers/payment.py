@@ -68,8 +68,8 @@ async def payment_handler(
                     "payment_subject": "service"
                 }
             ],
-            # "capture": True,
-            # "save_payment_method": True,
+            "capture": True,
+            "save_payment_method": True,
             "tax_system_code": 1
         }
     }
@@ -95,30 +95,66 @@ async def on_successful_payment(
     settings: Settings,
     db_session: AsyncSession,
 ):
-    payload = message.successful_payment.invoice_payload
-    if payload in (PaidEntity.ONE_MONTH_SUBSCRIPTION, PaidEntity.ONE_YEAR_SUBSCRIPTION):
-        text = (
-            payment_text["1 month success"]
-            if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION
-            else payment_text["1 year success"]
-        )
-        dutation = relativedelta(months=1) if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION else relativedelta(years=1)
-        await update_user_expiration(user, dutation, db_session)
-        await message.answer_photo(FSInputFile(path='src/bot/data/gardener1.png'), text)
-        await state.set_state(AIState.IN_AI_DIALOG)
-        logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
-    else:
-        await reset_user_image_counter(user.tg_id, db_session)
-        await message.answer_photo(
-            FSInputFile(path='src/bot/data/taking_photo.png'), payment_text["refresh_pictures_limit_success"]
-        )
-        logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
-    await message.bot.send_message(
-        settings.bot.CHAT_LOG_ID,
-        replies["user_payment_log"].format(
-            username=user.username,
-            payload=message.successful_payment.invoice_payload,
-        ),
-    )
-    await state.set_state(AIState.IN_AI_DIALOG)
+    payment = message.successful_payment
+    response = "💳 Данные платежа:\n\n"
 
+    # Выводим все атрибуты основного объекта платежа
+    for attr_name in dir(payment):
+        if not attr_name.startswith('_'):  # Исключаем служебные поля
+            attr_value = getattr(payment, attr_name)
+            if not callable(attr_value):  # Исключаем методы
+                response += f"🔹 {attr_name}: {attr_value}\n"
+
+    # Обработка order_info (если есть)
+    if hasattr(payment, 'order_info') and payment.order_info:
+        response += "\n📦 Информация о заказе:\n"
+        for attr_name in dir(payment.order_info):
+            if not attr_name.startswith('_'):
+                attr_value = getattr(payment.order_info, attr_name)
+                if not callable(attr_value) and attr_value is not None:
+                    response += f"  • {attr_name}: {attr_value}\n"
+
+    await message.answer(response)
+
+    # payment = message.successful_payment
+    # response = "💳 Все данные платежа:\n\n"
+    #
+    # # Пытаемся получить словарь атрибутов
+    # payment_vars = vars(payment) if hasattr(payment, '__dict__') else {}
+    #
+    # for attr_name, attr_value in payment_vars.items():
+    #     response += f"🔹 {attr_name}: {attr_value}\n"
+    #
+    # await message.answer(response if payment_vars else "Не удалось получить данные платежа")
+    #
+    #
+
+
+
+    # payload = message.successful_payment.invoice_payload
+    # if payload in (PaidEntity.ONE_MONTH_SUBSCRIPTION, PaidEntity.ONE_YEAR_SUBSCRIPTION):
+    #     text = (
+    #         payment_text["1 month success"]
+    #         if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION
+    #         else payment_text["1 year success"]
+    #     )
+    #     dutation = relativedelta(months=1) if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION else relativedelta(years=1)
+    #     await update_user_expiration(user, dutation, db_session)
+    #     await message.answer_photo(FSInputFile(path='src/bot/data/gardener1.png'), text)
+    #     await state.set_state(AIState.IN_AI_DIALOG)
+    #     logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
+    # else:
+    #     await reset_user_image_counter(user.tg_id, db_session)
+    #     await message.answer_photo(
+    #         FSInputFile(path='src/bot/data/taking_photo.png'), payment_text["refresh_pictures_limit_success"]
+    #     )
+    #     logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
+    # await message.bot.send_message(
+    #     settings.bot.CHAT_LOG_ID,
+    #     replies["user_payment_log"].format(
+    #         username=user.username,
+    #         payload=message.successful_payment.invoice_payload,
+    #     ),
+    # )
+    # await state.set_state(AIState.IN_AI_DIALOG)
+    #

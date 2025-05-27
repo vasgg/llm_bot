@@ -33,7 +33,7 @@ async def ai_assistant_text_handler(
     db_session: AsyncSession,
 ):
     if not check_action_limit(user, settings):
-        await message.forward(settings.bot.CHAT_LOG_ID)
+        # await message.forward(settings.bot.CHAT_LOG_ID)
         await message.answer_photo(
             FSInputFile(path='src/bot/data/greetings.png'),
             replies["action_limit_exceeded"],
@@ -50,7 +50,7 @@ async def ai_assistant_text_handler(
         return
 
     thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
-    await message.forward(settings.bot.CHAT_LOG_ID)
+    # await message.forward(settings.bot.CHAT_LOG_ID)
 
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
         response = await openai_client.get_response(thread_id, message.text, message, user.fullname)
@@ -60,7 +60,7 @@ async def ai_assistant_text_handler(
 
         cleaned_response = refactor_string(response)
         msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
-        await msg_answer.forward(settings.bot.CHAT_LOG_ID)
+        # await msg_answer.forward(settings.bot.CHAT_LOG_ID)
     if not user.is_subscribed and user.tg_id not in settings.bot.ADMINS:
         user.action_count += 1
     db_session.add(user)

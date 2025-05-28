@@ -52,6 +52,7 @@ async def form_handler(
             #     await openai_client.apply_context_to_thread(user, user_context, db_session)
             # else:
             await openai_client.apply_context_to_thread(user, user_context, db_session, use_existing_thread=True)
+            await imitate_typing()
             msg = await message.answer_photo(
                 FSInputFile(path='src/bot/data/magic_wand.png'),
                 payment_text["capability"],

@@ -23,5 +23,7 @@ async def error_handler(error_event: ErrorEvent, bot: aiogram.Bot, settings: Set
         f"<b>Type:</b> {type(exc_info).__name__}\n<b>Message:</b> {exc_info}\n\n<b>Traceback:</b>\n<code>{tb}</code>"
     )
     logging.exception("Exception: ", exc_info=exc_info)
-
-    await bot.send_message(settings.bot.ADMINS[0], error_message)
+    try:
+        await bot.send_message(settings.bot.ADMINS[0], error_message)
+    except Exception as e:
+        logging.error(f"Failed to send error message to admin: {e}")

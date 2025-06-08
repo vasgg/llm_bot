@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BOOLEAN, BigInteger, DateTime, ForeignKey, Integer, TIMESTAMP, func
+from sqlalchemy import BOOLEAN, TIMESTAMP, BigInteger, DateTime, ForeignKey, Integer, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -29,6 +29,12 @@ class User(Base):
     request: Mapped[str | None]
     payment_method_id: Mapped[str | None]
     source: Mapped[str | None]
+
+    def __str__(self):
+        return f"{self.__class__.__name__}(id: {self.tg_id}, fullname: {self.fullname})"
+
+    def __repr__(self):
+        return str(self)
 
 
 class UserCounters(Base):

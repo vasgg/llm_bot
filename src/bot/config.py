@@ -8,9 +8,7 @@ from bot.internal.helpers import assign_config_dict
 class BotConfig(BaseSettings):
     ADMINS: list[int]
     TOKEN: SecretStr
-    PROVIDER_TOKEN: SecretStr
     SENTRY_DSN: SecretStr | None = None
-    SHOP_ID: int
     CHAT_LOG_ID: int
     UTC_STARTING_MARK: int
     ACTIONS_THRESHOLD: int
@@ -20,6 +18,13 @@ class BotConfig(BaseSettings):
     STAGE: Stage
 
     model_config = assign_config_dict(prefix="BOT_")
+
+
+class ShopConfig(BaseSettings):
+    ID: int
+    PROVIDER_TOKEN: SecretStr
+
+    model_config = assign_config_dict(prefix="SHOP_")
 
 
 class GPTConfig(BaseSettings):
@@ -59,6 +64,7 @@ class DBConfig(BaseSettings):
 
 class Settings(BaseSettings):
     bot: BotConfig = BotConfig()
+    shop: ShopConfig = ShopConfig()
     gpt: GPTConfig = GPTConfig()
     redis: RedisConfig = RedisConfig()
     db: DBConfig = DBConfig()

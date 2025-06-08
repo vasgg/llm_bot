@@ -70,10 +70,10 @@ async def daily_routine(
     sttngs: Settings,
     db_connector: DatabaseConnector,
 ):
-    utcnow = datetime.now(UTC)
-    seconds_to_sleep = get_seconds_until_starting_mark(sttngs, utcnow)
-    await sleep(seconds_to_sleep)
     while True:
+        utcnow = datetime.now(UTC)
+        seconds_to_sleep = get_seconds_until_starting_mark(sttngs, utcnow)
+        await sleep(seconds_to_sleep)
         async with db_connector.session_factory() as session:
             for user in await get_all_users_with_active_subscription(session):
                 days_left = (user.expired_at.date() - utcnow.date()).days

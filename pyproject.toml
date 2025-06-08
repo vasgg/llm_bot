@@ -27,6 +27,9 @@ dependencies = [
 bot-run = "bot.main:run_main"
 
 [tool.ruff]
+exclude = [
+    "alembic",
+]
 line-length = 119
 target-version = "py312"
 

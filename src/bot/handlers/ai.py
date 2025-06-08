@@ -3,19 +3,19 @@ from logging import getLogger
 from aiogram import F, Router
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, FSInputFile
+from aiogram.types import FSInputFile, Message
 from aiogram.utils.chat_action import ChatActionSender
 from openai import BadRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.ai_client import AIClient
 from bot.config import Settings
-from bot.controllers.bot import refactor_string, validate_image_limit, validate_message_length
+from bot.controllers.base import refactor_string, validate_image_limit, validate_message_length
 from bot.controllers.gpt import get_or_create_ai_thread
 from bot.controllers.user import check_action_limit
 from bot.controllers.voice import process_voice
 from bot.internal.enums import AIState
-from bot.internal.keyboards import subscription_kb, refresh_pictures_kb
+from bot.internal.keyboards import refresh_pictures_kb, subscription_kb
 from bot.internal.lexicon import replies
 from database.models import User
 
@@ -33,9 +33,9 @@ async def ai_assistant_text_handler(
     db_session: AsyncSession,
 ):
     if not check_action_limit(user, settings):
-        # await message.forward(settings.bot.CHAT_LOG_ID)
+        await message.forward(settings.bot.CHAT_LOG_ID)
         await message.answer_photo(
-            FSInputFile(path='src/bot/data/greetings.png'),
+            FSInputFile(path="src/bot/data/greetings.png"),
             replies["action_limit_exceeded"],
             reply_markup=subscription_kb(),
         )
@@ -50,17 +50,16 @@ async def ai_assistant_text_handler(
         return
 
     thread_id = await get_or_create_ai_thread(user, openai_client, db_session)
-    # await message.forward(settings.bot.CHAT_LOG_ID)
+    await message.forward(settings.bot.CHAT_LOG_ID)
 
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
         response = await openai_client.get_response(thread_id, message.text, message, user.fullname)
         if response is None:
-            # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
             return
 
         cleaned_response = refactor_string(response)
         msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
-        # await msg_answer.forward(settings.bot.CHAT_LOG_ID)
+        await msg_answer.forward(settings.bot.CHAT_LOG_ID)
     if not user.is_subscribed and user.tg_id not in settings.bot.ADMINS:
         user.action_count += 1
     db_session.add(user)
@@ -73,7 +72,7 @@ async def ai_assistant_voice_handler(
     if not check_action_limit(user, settings):
         await message.forward(settings.bot.CHAT_LOG_ID)
         await message.answer_photo(
-            FSInputFile(path='src/bot/data/greetings.png'),
+            FSInputFile(path="src/bot/data/greetings.png"),
             replies["action_limit_exceeded"],
             reply_markup=subscription_kb(),
         )
@@ -87,7 +86,6 @@ async def ai_assistant_voice_handler(
         transcription = await process_voice(message, openai_client)
         response = await openai_client.get_response(thread_id, transcription, message, user.fullname)
         if response is None:
-            # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
             return
         cleaned_response = refactor_string(response)
         msg_answer = await message.answer(cleaned_response, parse_mode=ParseMode.MARKDOWN_V2)
@@ -104,7 +102,7 @@ async def ai_assistant_photo_handler(
     if not check_action_limit(user, settings):
         await message.forward(settings.bot.CHAT_LOG_ID)
         await message.answer_photo(
-            FSInputFile(path='src/bot/data/greetings.png'),
+            FSInputFile(path="src/bot/data/greetings.png"),
             replies["action_limit_exceeded"],
             reply_markup=subscription_kb(),
         )
@@ -120,7 +118,7 @@ async def ai_assistant_photo_handler(
     if user.tg_id not in settings.bot.ADMINS:
         if not await validate_image_limit(user.tg_id, db_session):
             await message.answer_photo(
-                FSInputFile(path='src/bot/data/not_happy.png'),
+                FSInputFile(path="src/bot/data/not_happy.png"),
                 replies["photo_limit_exceeded"],
                 reply_markup=refresh_pictures_kb(),
             )
@@ -155,7 +153,6 @@ async def ai_assistant_photo_handler(
             )
 
             if response is None:
-                # await message.answer("Извините, я отвлекся, давайте начнём новый разговор.")
                 return
 
             cleaned_response = refactor_string(response)
@@ -163,7 +160,7 @@ async def ai_assistant_photo_handler(
             await msg_answer.forward(settings.bot.CHAT_LOG_ID)
 
         except BadRequestError as e:
-            logger.error(f"OpenAI API Error: {e}")
+            logger.exception(f"OpenAI API Error: {e}")
             if e.status_code == 429:
                 await message.answer("Превышены лимиты запросов. Пожалуйста, попробуйте позже.")
             else:

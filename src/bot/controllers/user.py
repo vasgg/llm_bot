@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 import logging
+from datetime import UTC, datetime
 
 from aiogram.types import User
 from dateutil.relativedelta import relativedelta
@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import Settings
 from bot.internal.lexicon import ORDER, QUESTIONS
-from database.models import User as BotUser, UserCounters
+from database.models import User as BotUser
+from database.models import UserCounters
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,10 @@ async def get_user_from_db_by_tg_id(telegram_id: int, db_session: AsyncSession) 
     return result.scalar_one_or_none()
 
 
-async def update_user_expiration(user: User, duration: relativedelta, db_session: AsyncSession):
+async def update_user_expiration(user: BotUser, duration: relativedelta, db_session: AsyncSession):
     current_time = datetime.now(UTC)
-    if user.expired_at is None:
-        user.expired_at = current_time
-    if user.expired_at > current_time:
-        user.expired_at += duration
+    if user.expired_at is None or user.expired_at <= current_time:
+        user.expired_at = current_time + duration
     else:
         user.expired_at = current_time + duration
     user.is_subscribed = True
@@ -43,10 +42,6 @@ async def update_user_expiration(user: User, duration: relativedelta, db_session
 
 def compose_username(user: User):
     return "@" + user.username if user.username else user.full_name.replace(" ", "_")
-
-
-def is_ready(user: User) -> bool:
-    return all(getattr(user, field) is not None for field in QUESTIONS)
 
 
 async def ask_next_question(user: User, index: int) -> tuple:
@@ -85,7 +80,12 @@ async def reset_user_image_counter(telegram_id: int, db_session: AsyncSession):
 
 
 async def get_all_users_with_active_subscription(db_session: AsyncSession) -> list[BotUser]:
-    query = select(BotUser).filter(BotUser.is_subscribed)
+    now = datetime.now(UTC)
+    query = select(BotUser).where(
+        BotUser.is_subscribed.is_(True),
+        BotUser.expired_at.isnot(None),
+        BotUser.expired_at > now,
+    )
     result = await db_session.execute(query)
     return list(result.scalars().all())
 

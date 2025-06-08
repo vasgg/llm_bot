@@ -1,17 +1,15 @@
-from asyncio import sleep
 from logging import getLogger
-from random import choice, randint
+from random import choice
 
 from aiogram import F, Router
-from aiogram.filters import CommandStart, StateFilter
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile, Message
 from aiogram.utils.chat_action import ChatActionSender
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.ai_client import AIClient
-from bot.config import Settings
-from bot.controllers.bot import imitate_typing
+from bot.controllers.base import imitate_typing
 from bot.controllers.user import ask_next_question, generate_user_context
 from bot.controllers.voice import extract_text_from_message
 from bot.internal.enums import AIState, Form
@@ -54,7 +52,7 @@ async def form_handler(
             await openai_client.apply_context_to_thread(user, user_context, db_session, use_existing_thread=True)
             await imitate_typing()
             msg = await message.answer_photo(
-                FSInputFile(path='src/bot/data/magic_wand.png'),
+                FSInputFile(path="src/bot/data/magic_wand.png"),
                 payment_text["capability"],
             )
             await msg.pin(disable_notification=True)
@@ -127,3 +125,9 @@ async def form_handler(
 #                 await callback.message.answer(question)
 #         case MenuButtons.NO:
 #             await callback.message.delete()
+
+
+@router.message(F.user_shared)
+async def contact_handler(message: Message):
+    contact = message.users_shared
+    await message.answer(f"Вы выбрали пользователя с Telegram user_id: {contact.user_ids}")

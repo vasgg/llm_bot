@@ -1,6 +1,6 @@
 import asyncio
-from io import BytesIO
 import logging
+from io import BytesIO
 
 from aiogram.types import Message
 
@@ -59,8 +59,7 @@ async def extract_text_from_message(message: Message, openai_client: AIClient) -
     if message.voice:
         transcription = await process_voice(message, openai_client)
         return transcription
-    elif message.text:
+    if message.text:
         return message.text.strip()
-    else:
-        await message.reply("Пожалуйста, ответьте текстом или голосовым сообщением.")
-        return None
+    await message.reply("Пожалуйста, ответьте текстом или голосовым сообщением.")
+    return None

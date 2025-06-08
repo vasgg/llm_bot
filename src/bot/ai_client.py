@@ -1,9 +1,9 @@
-from asyncio import get_running_loop, sleep
 import logging
+from asyncio import get_running_loop, sleep
 
 from aiogram.types import Message
 from openai import AsyncOpenAI, BadRequestError
-from openai.types.beta.threads import ImageFileContentBlockParam, TextContentBlockParam, ImageURLContentBlockParam
+from openai.types.beta.threads import ImageFileContentBlockParam, ImageURLContentBlockParam, TextContentBlockParam
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.internal.lexicon import replies

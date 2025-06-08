@@ -1,4 +1,5 @@
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from aiogram import BaseMiddleware
 
@@ -23,6 +24,5 @@ class UserLimitMiddleware(BaseMiddleware):
 
         if user.id <= self.limit or user.tg_id in settings.bot.ADMINS:
             return await handler(event, data)
-        else:
-            await event.answer(replies["users_limit_exceeded"])
-            return None
+        await event.answer(replies["users_limit_exceeded"])
+        return None

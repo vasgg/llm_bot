@@ -1,20 +1,21 @@
 import logging
-from asyncio import run
+from asyncio import create_task, run
 
-from aiogram.fsm.storage.redis import RedisStorage
-from redis.asyncio import Redis
 import sentry_sdk
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.redis import RedisStorage
+from redis.asyncio import Redis
 
+from bot.ai_client import AIClient
+from bot.config import settings
+from bot.controllers.base import daily_routine
 from bot.handlers.ai import router as ai_router
 from bot.handlers.base import router as base_router
 from bot.handlers.command import router as commands_router
-from bot.handlers.payment import router as payment_router
 from bot.handlers.errors import router as error_router
-from bot.ai_client import AIClient
-from bot.config import settings
+from bot.handlers.payment import router as payment_router
 from bot.internal.enums import Stage
 from bot.internal.helpers import setup_logs
 from bot.internal.notify_admin import on_shutdown, on_startup
@@ -58,8 +59,8 @@ async def main():
     db = get_db(settings)
     db_session_middleware = DBSessionMiddleware(db)
     dispatcher.update.outer_middleware(UpdatesDumperMiddleware())
-    # dispatcher.startup.register(on_startup)
-    # dispatcher.shutdown.register(on_shutdown)
+    dispatcher.startup.register(on_startup)
+    dispatcher.shutdown.register(on_shutdown)
     dispatcher.message.middleware(db_session_middleware)
     dispatcher.callback_query.middleware(db_session_middleware)
     dispatcher.message.middleware(AuthMiddleware())
@@ -75,7 +76,7 @@ async def main():
         error_router,
     )
     # noinspection PyUnusedLocal
-    # daily_task = create_task(daily_routine(bot, settings, db))
+    daily_task = create_task(daily_routine(bot, settings, db))
     logging.info("suslik robot started")
     await dispatcher.start_polling(bot, skip_updates=True)
 

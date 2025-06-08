@@ -1,26 +1,27 @@
-from asyncio import sleep
 import logging
-from datetime import datetime, timedelta, timezone
-from random import randint
 import re
+from asyncio import sleep
+from datetime import UTC, datetime, timedelta
+from random import randint
+
 from aiogram import Bot
 from aiogram.fsm.context import FSMContext
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.types import Message
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import Settings, settings
-from bot.controllers.user import get_user_counter
-
-from bot.internal.consts import BLOCK_DURATION, ONE_DAY, MAX_MESSAGE_LENGTH
+from bot.controllers.user import get_all_users_with_active_subscription, get_user_counter
+from bot.internal.consts import BLOCK_DURATION, MAX_MESSAGE_LENGTH
+from bot.internal.keyboards import subscription_kb
+from bot.internal.lexicon import support_text
 from database.database_connector import DatabaseConnector
 
 logger = logging.getLogger(__name__)
 
 
-def escape_markdown_v2(text: str) -> str:
+def escape_markdown_v2(string: str) -> str:
     escape_chars = r"_*[]()~`>#+-=|{}.!"
-    return re.sub(r"([%s])" % re.escape(escape_chars), r"\\\1", text)
+    return re.sub(r"([%s])" % re.escape(escape_chars), r"\\\1", string)
 
 
 def escape_stars(s):
@@ -57,52 +58,44 @@ async def imitate_typing(delay_from=1, delay_to=3):
     await sleep(randint(delay_from, delay_to))
 
 
-async def truncate_user_limit_table(db_session: AsyncSession) -> None:
-    await db_session.execute(text("TRUNCATE TABLE user_limits RESTART IDENTITY"))
-
-
-def get_seconds_until_starting_mark(settings: Settings, current_hour, utcnow):
-    if current_hour >= settings.bot.UTC_STARTING_MARK:
-        hours_to_sleep = 24 - current_hour + settings.bot.UTC_STARTING_MARK
-    else:
-        hours_to_sleep = settings.bot.UTC_STARTING_MARK - current_hour
-    seconds_to_sleep = hours_to_sleep * 3600 - utcnow.minute * 60 - utcnow.second
-    return seconds_to_sleep
+def get_seconds_until_starting_mark(sttngs: Settings, utcnow):
+    mark = utcnow.replace(hour=sttngs.bot.UTC_STARTING_MARK, minute=0, second=0, microsecond=0)
+    if utcnow >= mark:
+        mark += timedelta(days=1)
+    return (mark - utcnow).total_seconds()
 
 
 async def daily_routine(
     bot: Bot,
-    settings: Settings,
+    sttngs: Settings,
     db_connector: DatabaseConnector,
 ):
-    utcnow = datetime.now(timezone.utc)
-    current_hour = utcnow.hour
-    seconds_to_sleep = get_seconds_until_starting_mark(settings, current_hour, utcnow)
+    utcnow = datetime.now(UTC)
+    seconds_to_sleep = get_seconds_until_starting_mark(sttngs, utcnow)
     await sleep(seconds_to_sleep)
     while True:
         async with db_connector.session_factory() as session:
-            # await truncate_user_limit_table(session)
-            # for user in await get_all_users_with_active_subscription(session):
-            #     utcnow = datetime.now(timezone.utc)
-            #     delta = utcnow.date() - user.expired_at
-            #     if delta.days == 1:
-            #         await bot.send_message(
-            #             chat_id=user.telegram_id,
-            #             text=await get_text_by_prompt(prompt='subscribtion_almost_over', db_session=session),
-            #             reply_markup=get_premium_keyboard(),
-            #         )
-            #         logger.info(f"{'ending subscription reminder was sent to ' + str(user)}")
-            #
-            #     elif delta.days == 0:
-            #         user.subscription_status = UserSubscriptionType.ACCESS_EXPIRED
-            #         await bot.send_message(
-            #             chat_id=user.telegram_id,
-            #             text=await get_text_by_prompt(prompt='subscribtion_over', db_session=session),
-            #             reply_markup=get_premium_keyboard(),
-            #         )
-            #         logger.info(f"{'ending subscription notification was sent to ' + str(user)}")
+            for user in await get_all_users_with_active_subscription(session):
+                days_left = (user.expired_at.date() - utcnow.date()).days
+                if days_left == 2:
+                    await bot.send_message(
+                        chat_id=user.tg_id,
+                        text=support_text["subscription_2_days_left"],
+                        reply_markup=subscription_kb(prolong=True),
+                    )
+                    logger.info(f"ending subscription reminder was sent to {user}")
+
+                elif days_left == 0:
+                    user.is_subscribed = False
+                    user.expired_at = None
+                    await bot.send_message(
+                        chat_id=user.tg_id,
+                        text=support_text["subscription_0_days_left"],
+                        reply_markup=subscription_kb(prolong=True),
+                    )
+                    logger.info(f"ending subscription notification was sent to {user}")
+                await sleep(0.1)
             await session.commit()
-        await sleep(ONE_DAY)
 
 
 async def validate_message_length(
@@ -110,7 +103,7 @@ async def validate_message_length(
     state: FSMContext,
 ) -> bool:
     raw_text = message.text or message.caption or ""
-    now = datetime.now()
+    now = datetime.now(UTC)
     data = await state.get_data()
     block_until = data.get("block_until")
 
@@ -126,7 +119,7 @@ async def validate_message_length(
 
 
 async def validate_image_limit(telegram_id: int, db_session: AsyncSession) -> bool:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     counter = await get_user_counter(telegram_id, db_session)
 
     if counter.period_started_at is None:
@@ -137,7 +130,7 @@ async def validate_image_limit(telegram_id: int, db_session: AsyncSession) -> bo
 
     db_time = counter.period_started_at
     if db_time.tzinfo is None:
-        db_time = db_time.replace(tzinfo=timezone.utc)
+        db_time = db_time.replace(tzinfo=UTC)
 
     if now - db_time > timedelta(days=settings.bot.PICTURES_WINDOW_DAYS):
         counter.period_started_at = now

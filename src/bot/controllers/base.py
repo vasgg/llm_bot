@@ -82,6 +82,7 @@ async def daily_routine(
                         chat_id=user.tg_id,
                         text=support_text["subscription_2_days_left"],
                         reply_markup=subscription_kb(prolong=True),
+                        disable_notification=True,
                     )
                     logger.info(f"ending subscription reminder was sent to {user}")
 
@@ -92,6 +93,7 @@ async def daily_routine(
                         chat_id=user.tg_id,
                         text=support_text["subscription_0_days_left"],
                         reply_markup=subscription_kb(prolong=True),
+                        disable_notification=True,
                     )
                     logger.info(f"ending subscription notification was sent to {user}")
                 await sleep(0.1)

@@ -4,18 +4,17 @@ from logging import getLogger
 from random import randint
 
 from aiogram import Router
-from aiogram.fsm.context import FSMContext
-from aiogram.types import FSInputFile
-from aiogram.utils.chat_action import ChatActionSender
 from aiogram.filters import Command, CommandObject
-from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
+from aiogram.types import FSInputFile, Message
+from aiogram.utils.chat_action import ChatActionSender
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import Settings
-from bot.controllers.bot import imitate_typing
+from bot.controllers.base import imitate_typing
 from bot.controllers.user import ask_next_question, get_user_counter
-from bot.internal.enums import Form, AIState
-from bot.internal.keyboards import subscription_kb, cancel_autopayment_kb
+from bot.internal.enums import AIState, Form
+from bot.internal.keyboards import cancel_autopayment_kb, contact_kb, subscription_kb
 from bot.internal.lexicon import replies, support_text
 from database.models import User, UserCounters
 
@@ -23,7 +22,7 @@ router = Router()
 logger = getLogger(__name__)
 
 
-@router.message(Command("start", "support"))
+@router.message(Command("start", "support", "share"))
 async def command_handler(
     message: Message,
     command: CommandObject,
@@ -57,10 +56,10 @@ async def command_handler(
                     await imitate_typing()
                     await state.set_state(AIState.IN_AI_DIALOG)
         case "support":
-            picture = FSInputFile(path='src/bot/data/with_book.png')
-            if user.is_subscribed:
+            picture = FSInputFile(path="src/bot/data/with_book.png")
+            if user.is_subscribed and user.expired_at and user.expired_at > datetime.now(user.expired_at.tzinfo):
                 current_date = datetime.now(user.expired_at.tzinfo)
-                days = (user.expired_at - current_date).days
+                days = (user.expired_at.date() - current_date.date()).days
                 user_counter: UserCounters = await get_user_counter(user.tg_id, db_session)
                 photos = settings.bot.PICTURES_THRESHOLD - user_counter.image_count
                 await message.answer_photo(
@@ -74,3 +73,5 @@ async def command_handler(
                     support_text["unsubscribed"].format(actions=(settings.bot.ACTIONS_THRESHOLD - user.action_count)),
                     reply_markup=subscription_kb(),
                 )
+        case "share":
+            await message.answer("Выберите, кому хотите подарить подписку", reply_markup=contact_kb)

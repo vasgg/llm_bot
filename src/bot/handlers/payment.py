@@ -105,6 +105,7 @@ async def on_successful_payment(
         dutation = relativedelta(months=1) if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION else relativedelta(years=1)
         await update_user_expiration(user, dutation, db_session)
         await message.answer_photo(FSInputFile(path="src/bot/data/gardener1.png"), text)
+        await state.set_data({})
         await state.set_state(AIState.IN_AI_DIALOG)
         logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
     else:

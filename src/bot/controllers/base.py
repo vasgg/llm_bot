@@ -4,7 +4,7 @@ from asyncio import sleep
 from datetime import UTC, datetime, timedelta
 from random import randint
 
-from aiogram import Bot
+from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,6 +68,7 @@ def get_seconds_until_starting_mark(sttngs: Settings, utcnow):
 async def daily_routine(
     bot: Bot,
     sttngs: Settings,
+    dispatcher: Dispatcher,
     db_connector: DatabaseConnector,
 ):
     while True:
@@ -77,25 +78,33 @@ async def daily_routine(
         async with db_connector.session_factory() as session:
             for user in await get_all_users_with_active_subscription(session):
                 days_left = (user.expired_at.date() - utcnow.date()).days
-                if days_left == 2:
-                    await bot.send_message(
-                        chat_id=user.tg_id,
-                        text=support_text["subscription_2_days_left"],
-                        reply_markup=subscription_kb(prolong=True),
-                        disable_notification=True,
-                    )
-                    logger.info(f"ending subscription reminder was sent to {user}")
+                fsm_context = dispatcher.fsm.context(chat_id=user.tg_id, user_id=user.tg_id)
+                data = await fsm_context.get_data()
+                notified_days = data.get("notified_days", [])
+                if days_left in (2, 0) and days_left not in notified_days:
+                    if days_left == 2:
+                        await bot.send_message(
+                            chat_id=user.tg_id,
+                            text=support_text["subscription_2_days_left"],
+                            reply_markup=subscription_kb(prolong=True),
+                            disable_notification=True,
+                        )
+                        logger.info(f"ending subscription reminder was sent to {user}")
 
-                elif days_left == 0:
-                    user.is_subscribed = False
-                    user.expired_at = None
-                    await bot.send_message(
-                        chat_id=user.tg_id,
-                        text=support_text["subscription_0_days_left"],
-                        reply_markup=subscription_kb(prolong=True),
-                        disable_notification=True,
-                    )
-                    logger.info(f"ending subscription notification was sent to {user}")
+                    elif days_left == 0:
+                        user.is_subscribed = False
+                        user.expired_at = None
+                        await bot.send_message(
+                            chat_id=user.tg_id,
+                            text=support_text["subscription_0_days_left"],
+                            reply_markup=subscription_kb(prolong=True),
+                            disable_notification=True,
+                        )
+                        logger.info(f"ending subscription notification was sent to {user}")
+
+                    notified_days.append(days_left)
+                    await fsm_context.update_data(notified_days=notified_days)
+
                 await sleep(0.1)
             await session.commit()
 

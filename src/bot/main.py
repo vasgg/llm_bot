@@ -76,7 +76,7 @@ async def main():
         error_router,
     )
     # noinspection PyUnusedLocal
-    daily_task = create_task(daily_routine(bot, settings, db))
+    daily_task = create_task(daily_routine(bot, settings, dispatcher, db))
     logging.info("suslik robot started")
     await dispatcher.start_polling(bot, skip_updates=True)
 

@@ -23,6 +23,7 @@ class BotConfig(BaseSettings):
 class ShopConfig(BaseSettings):
     ID: int
     PROVIDER_TOKEN: SecretStr
+    API_KEY: SecretStr
 
     model_config = assign_config_dict(prefix="SHOP_")
 

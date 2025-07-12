@@ -3,9 +3,11 @@ from typing import Any
 
 from aiogram import BaseMiddleware
 
-from bot.config import settings
+from bot.config import get_settings
 from bot.internal.lexicon import replies
 from database.models import User
+
+settings = get_settings()
 
 
 class UserLimitMiddleware(BaseMiddleware):

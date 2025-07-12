@@ -15,7 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 async def add_user_to_db(user, db_session: AsyncSession, source: str | None = None) -> BotUser:
-    new_user = BotUser(tg_id=user.id, fullname=user.full_name, username=compose_username(user), source=source)
+    new_user = BotUser(
+        tg_id=user.id,
+        fullname=user.full_name,
+        username=compose_username(user),
+        source=source,
+    )
     db_session.add(new_user)
     await db_session.flush()
     logger.info(f"New user created: {new_user}")
@@ -79,7 +84,9 @@ async def reset_user_image_counter(telegram_id: int, db_session: AsyncSession):
     await db_session.flush()
 
 
-async def get_all_users_with_active_subscription(db_session: AsyncSession) -> list[BotUser]:
+async def get_all_users_with_active_subscription(
+    db_session: AsyncSession,
+) -> list[BotUser]:
     now = datetime.now(UTC)
     query = select(BotUser).where(
         BotUser.is_subscribed.is_(True),

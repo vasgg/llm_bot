@@ -1,20 +1,26 @@
-import logging
-import re
 from asyncio import sleep
 from datetime import UTC, datetime, timedelta
+import logging
 from random import randint
+import re
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.config import Settings, settings
-from bot.controllers.user import get_all_users_with_active_subscription, get_user_counter
+from bot.config import Settings
+from bot.controllers.payments import create_recurrent_payment
+from bot.controllers.user import (
+    get_all_users_with_active_subscription,
+    get_user_counter,
+)
 from bot.internal.consts import BLOCK_DURATION, MAX_MESSAGE_LENGTH
+from bot.internal.enums import PaidEntity, PaymentType
 from bot.internal.keyboards import subscription_kb
 from bot.internal.lexicon import support_text
 from database.database_connector import DatabaseConnector
+from database.models import Payment
 
 logger = logging.getLogger(__name__)
 
@@ -78,34 +84,62 @@ async def daily_routine(
         async with db_connector.session_factory() as session:
             for user in await get_all_users_with_active_subscription(session):
                 days_left = (user.expired_at.date() - utcnow.date()).days
-                fsm_context = dispatcher.fsm.context(chat_id=user.tg_id, user_id=user.tg_id)
-                data = await fsm_context.get_data()
-                notified_days = data.get("notified_days", [])
-                if days_left in (2, 0) and days_left not in notified_days:
-                    if days_left == 2:
-                        await bot.send_message(
-                            chat_id=user.tg_id,
-                            text=support_text["subscription_2_days_left"],
-                            reply_markup=subscription_kb(prolong=True),
-                            disable_notification=True,
+                if not user.is_autopayment_enabled:
+                    fsm_context = dispatcher.fsm.context(chat_id=user.tg_id, user_id=user.tg_id)
+                    data = await fsm_context.get_data()
+                    notified_days = data.get("notified_days", [])
+                    if days_left in (2, 0) and days_left not in notified_days:
+                        if days_left == 2:
+                            await bot.send_message(
+                                chat_id=user.tg_id,
+                                text=support_text["subscription_2_days_left"],
+                                reply_markup=subscription_kb(prolong=True),
+                                disable_notification=True,
+                            )
+                            logger.info(f"ending subscription reminder was sent to {user}")
+
+                        elif days_left == 0:
+                            user.is_subscribed = False
+                            user.expired_at = None
+                            user.subscription_duration = None
+                            await bot.send_message(
+                                chat_id=user.tg_id,
+                                text=support_text["subscription_0_days_left"],
+                                reply_markup=subscription_kb(prolong=True),
+                                disable_notification=True,
+                            )
+                            logger.info(f"ending subscription notification was sent to {user}")
+
+                        notified_days.append(days_left)
+                        await fsm_context.update_data(notified_days=notified_days)
+
+                    await sleep(0.1)
+                else:
+                    if days_left == 0:
+                        duration = (
+                            "1 месяц" if user.subscription_duration == PaidEntity.ONE_MONTH_SUBSCRIPTION else "1 год"
                         )
-                        logger.info(f"ending subscription reminder was sent to {user}")
-
-                    elif days_left == 0:
-                        user.is_subscribed = False
-                        user.expired_at = None
-                        await bot.send_message(
-                            chat_id=user.tg_id,
-                            text=support_text["subscription_0_days_left"],
-                            reply_markup=subscription_kb(prolong=True),
-                            disable_notification=True,
+                        amount = 390 if user.subscription_duration == PaidEntity.ONE_MONTH_SUBSCRIPTION else 3900
+                        description_text = f"Оплата подписки, длительность: {duration}."
+                        payment = await create_recurrent_payment(
+                            amount,
+                            description_text,
+                            user.tg_id,
+                            user.subscription_duration,
+                            user.payment_method_id,
                         )
-                        logger.info(f"ending subscription notification was sent to {user}")
-
-                    notified_days.append(days_left)
-                    await fsm_context.update_data(notified_days=notified_days)
-
-                await sleep(0.1)
+                        new_payment = Payment(
+                            payment_id=payment.id,
+                            user_tg_id=user.tg_id,
+                            description=description_text,
+                            payment_type=PaymentType.RECURRENT,
+                            price=amount,
+                        )
+                        if payment.status == "succeeded":
+                            logger.info(f"payment for {user} was successful")
+                        else:
+                            logger.error(f"error with payment for {user}: {payment.status}")
+                        session.add(new_payment)
             await session.commit()
 
 
@@ -129,7 +163,7 @@ async def validate_message_length(
     return True
 
 
-async def validate_image_limit(telegram_id: int, db_session: AsyncSession) -> bool:
+async def validate_image_limit(telegram_id: int, settings: Settings, db_session: AsyncSession) -> bool:
     now = datetime.now(UTC)
     counter = await get_user_counter(telegram_id, db_session)
 

@@ -27,7 +27,12 @@ def upgrade() -> None:
         sa.Column("period_started_at", sa.DateTime(), nullable=True),
         sa.Column("image_count", sa.Integer(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["tg_id"], ["users.tg_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -49,7 +54,12 @@ def downgrade() -> None:
             autoincrement=False,
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(["tg_id"], ["users.tg_id"], name="user_limits_tg_id_fkey", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["tg_id"],
+            ["users.tg_id"],
+            name="user_limits_tg_id_fkey",
+            ondelete="CASCADE",
+        ),
         sa.PrimaryKeyConstraint("id", name="user_limits_pkey"),
     )
     op.drop_table("user_counters")

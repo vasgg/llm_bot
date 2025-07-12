@@ -20,7 +20,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("is_autopayment_enabled", sa.BOOLEAN(), server_default="false", nullable=False))
+    op.add_column(
+        "users",
+        sa.Column(
+            "is_autopayment_enabled",
+            sa.BOOLEAN(),
+            server_default="false",
+            nullable=False,
+        ),
+    )
     op.add_column("users", sa.Column("payment_method_id", sa.String(), nullable=True))
 
 

@@ -22,15 +22,14 @@ dependencies = [
     "sentry-sdk>=2.27.0",
     "redis>=6.0.0",
     "yookassa>=3.5.0",
+    "fastapi>=0.115.13",
+    "uvicorn>=0.34.3",
 ]
 
 [project.scripts]
 bot-run = "bot.main:run_main"
 
 [tool.ruff]
-exclude = [
-    "alembic",
-]
 line-length = 119
 target-version = "py312"
 

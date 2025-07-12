@@ -5,12 +5,13 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from fastapi import FastAPI
-import uvicorn
 from starlette.datastructures import State
+import uvicorn
+
 from bot.config import get_settings
+from bot.internal.helpers import setup_logs
 from database.database_connector import get_db
 from routers.webhook import router as webhook_router
-from bot.internal.helpers import setup_logs
 
 
 @asynccontextmanager
@@ -42,4 +43,4 @@ setup_logs("yookassa_webhook")
 app.include_router(webhook_router, prefix="/webhook")
 
 if __name__ == "__main__":
-    uvicorn.run("src.webapp.main:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("src.webapp.main:app", host="0.0.0.0", port=8080)

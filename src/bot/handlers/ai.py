@@ -10,7 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.ai_client import AIClient
 from bot.config import Settings
-from bot.controllers.base import refactor_string, validate_image_limit, validate_message_length
+from bot.controllers.base import (
+    refactor_string,
+    validate_image_limit,
+    validate_message_length,
+)
 from bot.controllers.gpt import get_or_create_ai_thread
 from bot.controllers.user import check_action_limit
 from bot.controllers.voice import process_voice
@@ -67,7 +71,11 @@ async def ai_assistant_text_handler(
 
 @router.message(AIState.IN_AI_DIALOG, F.voice)
 async def ai_assistant_voice_handler(
-    message: Message, openai_client: AIClient, user: User, settings: Settings, db_session: AsyncSession
+    message: Message,
+    openai_client: AIClient,
+    user: User,
+    settings: Settings,
+    db_session: AsyncSession,
 ):
     if not check_action_limit(user, settings):
         await message.forward(settings.bot.CHAT_LOG_ID)
@@ -97,7 +105,11 @@ async def ai_assistant_voice_handler(
 
 @router.message(AIState.IN_AI_DIALOG, F.photo)
 async def ai_assistant_photo_handler(
-    message: Message, openai_client: AIClient, user: User, settings: Settings, db_session: AsyncSession
+    message: Message,
+    openai_client: AIClient,
+    user: User,
+    settings: Settings,
+    db_session: AsyncSession,
 ):
     if not check_action_limit(user, settings):
         await message.forward(settings.bot.CHAT_LOG_ID)
@@ -116,7 +128,7 @@ async def ai_assistant_photo_handler(
         )
         return
     if user.tg_id not in settings.bot.ADMINS:
-        if not await validate_image_limit(user.tg_id, db_session):
+        if not await validate_image_limit(user.tg_id, settings, db_session):
             await message.answer_photo(
                 FSInputFile(path="src/bot/data/not_happy.png"),
                 replies["photo_limit_exceeded"],
@@ -124,7 +136,8 @@ async def ai_assistant_photo_handler(
             )
             await message.forward(settings.bot.CHAT_LOG_ID)
             await message.bot.send_message(
-                settings.bot.CHAT_LOG_ID, replies["pictures_limit_exceeded_log"].format(username=user.username)
+                settings.bot.CHAT_LOG_ID,
+                replies["pictures_limit_exceeded_log"].format(username=user.username),
             )
             return
     thread_id = await get_or_create_ai_thread(user, openai_client, db_session)

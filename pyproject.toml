@@ -28,7 +28,7 @@ dependencies = [
 
 [project.scripts]
 bot-run = "bot.main:run_main"
-bot-run = "webapp.main:run_main"
+webapp-run = "webapp.main:run_main"
 
 [tool.ruff]
 line-length = 119

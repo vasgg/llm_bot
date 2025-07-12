@@ -1,17 +1,14 @@
-import json
 from logging import getLogger
 
 from aiogram import F, Router
-from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, FSInputFile, LabeledPrice, Message, PreCheckoutQuery
-from dateutil.relativedelta import relativedelta
+from aiogram.types import CallbackQuery, PreCheckoutQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.config import Settings
-from bot.controllers.user import reset_user_image_counter, update_user_expiration
+from bot.controllers.payments import add_payment_to_db, get_subscription_payment
 from bot.internal.callbacks import PaidEntityCallbackFactory
-from bot.internal.enums import AIState, PaidEntity
-from bot.internal.lexicon import payment_text, replies
+from bot.internal.enums import PaidEntity
+from bot.internal.keyboards import autopayment_cancelled_kb, payment_link_kb
+from bot.internal.lexicon import payment_text
 from database.models import User
 
 router = Router()
@@ -29,96 +26,46 @@ async def on_pre_checkout_query(
 async def payment_handler(
     callback: CallbackQuery,
     callback_data: PaidEntityCallbackFactory,
-    settings: Settings,
+    db_session: AsyncSession,
 ):
     await callback.answer()
     match callback_data.entity:
         case PaidEntity.ONE_MONTH_SUBSCRIPTION:
-            description = "Длительность: 1 месяц"
-            value = 390
-            prices = [
-                LabeledPrice(label="Подписка на 1 месяц", amount=value * 100),
-            ]
+            description = "Оплата подписки, длительность: 1 месяц."
+            amount = 390
         case PaidEntity.ONE_YEAR_SUBSCRIPTION:
-            description = "Длительность: 1 год"
-            value = 3900
-            prices = [
-                LabeledPrice(label="Подписка на 1 год", amount=value * 100),
-            ]
+            description = "Оплата подписки, длительность: 1 год."
+            amount = 3900
         case PaidEntity.PICTURES_COUNTER_REFRESH:
-            description = "Сброс лимита картинок"
-            value = 150
-            prices = [
-                LabeledPrice(label="Дополнительные 50 картинок", amount=value * 100),
-            ]
+            description = "Сброс лимита картинок."
+            amount = 150
         case _:
             assert False, "Unexpected paid entity"
-    provider_data = {
-        "receipt": {
-            "items": [
-                {
-                    "description": description,
-                    "quantity": 1,
-                    "amount": {
-                        "value": value,
-                        "currency": "RUB",
-                    },
-                    "vat_code": 1,
-                    "payment_mode": "full_payment",
-                    "payment_subject": "service",
-                }
-            ],
-            "capture": True,
-            "save_payment_method": True,
-            "tax_system_code": 1,
-        }
-    }
-    await callback.bot.send_invoice(
-        chat_id=callback.from_user.id,
-        title="Оплата",
-        description=description,
-        payload=callback_data.entity,
-        provider_token=settings.bot.PROVIDER_TOKEN.get_secret_value(),
-        currency="RUB",
-        prices=prices,
-        need_email=True,
-        send_email_to_provider=True,
-        provider_data=json.dumps(provider_data),
+    payment = await get_subscription_payment(amount, description, callback.from_user.id, callback_data.entity)
+    confirmation_url = payment.confirmation.confirmation_url
+    await add_payment_to_db(payment.id, amount, description, callback.from_user.id, db_session)
+    await callback.message.answer(
+        text=payment_text["payment_url_text"].format(description=description),
+        reply_markup=payment_link_kb(amount, confirmation_url),
     )
 
 
-@router.message(F.successful_payment)
-async def on_successful_payment(
-    message: Message,
-    user: User,
-    state: FSMContext,
-    settings: Settings,
-    db_session: AsyncSession,
-):
-    payload = message.successful_payment.invoice_payload
-    if payload in (PaidEntity.ONE_MONTH_SUBSCRIPTION, PaidEntity.ONE_YEAR_SUBSCRIPTION):
-        text = (
-            payment_text["1 month success"]
-            if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION
-            else payment_text["1 year success"]
-        )
-        dutation = relativedelta(months=1) if payload == PaidEntity.ONE_MONTH_SUBSCRIPTION else relativedelta(years=1)
-        await update_user_expiration(user, dutation, db_session)
-        await message.answer_photo(FSInputFile(path="src/bot/data/gardener1.png"), text)
-        await state.set_data({})
-        await state.set_state(AIState.IN_AI_DIALOG)
-        logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
-    else:
-        await reset_user_image_counter(user.tg_id, db_session)
-        await message.answer_photo(
-            FSInputFile(path="src/bot/data/taking_photo.png"), payment_text["refresh_pictures_limit_success"]
-        )
-        logger.info(f"Successful payment for user {user.username}: {message.successful_payment.invoice_payload}")
-    await message.bot.send_message(
-        settings.bot.CHAT_LOG_ID,
-        replies["user_payment_log"].format(
-            username=user.username,
-            payload=message.successful_payment.invoice_payload,
-        ),
+@router.callback_query(F.data == "cancel_autopayment")
+async def cancel_payment_dialog(callback: CallbackQuery, user: User):
+    await callback.answer()
+    date = user.expired_at.strftime("%d.%m.%Y")
+    await callback.message.answer(
+        text=payment_text["cancel_payment"].format(date=date),
+        reply_markup=autopayment_cancelled_kb(),
     )
-    await state.set_state(AIState.IN_AI_DIALOG)
+
+
+@router.callback_query(F.data == "autopayment_cancelled")
+async def cancel_payment_handler(callback: CallbackQuery, user: User):
+    await callback.answer()
+    date = user.expired_at.strftime("%d.%m.%Y")
+    user.is_autopayment_enabled = False
+    user.subscription_duration = None
+    await callback.message.edit_text(
+        text=payment_text["payment_cancelled"].format(date=date),
+    )

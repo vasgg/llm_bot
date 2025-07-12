@@ -3,7 +3,11 @@ from asyncio import get_running_loop, sleep
 
 from aiogram.types import Message
 from openai import AsyncOpenAI, BadRequestError
-from openai.types.beta.threads import ImageFileContentBlockParam, ImageURLContentBlockParam, TextContentBlockParam
+from openai.types.beta.threads import (
+    ImageFileContentBlockParam,
+    ImageURLContentBlockParam,
+    TextContentBlockParam,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.internal.lexicon import replies
@@ -127,7 +131,11 @@ class AIClient:
             return "Ошибка при обработке изображения. Убедитесь, что файл корректного формата."
 
     async def apply_context_to_thread(
-        self, user: User, context: str, db_session: AsyncSession, use_existing_thread: bool = False
+        self,
+        user: User,
+        context: str,
+        db_session: AsyncSession,
+        use_existing_thread: bool = False,
     ) -> str:
         if use_existing_thread and user.ai_thread:
             thread_id = user.ai_thread

@@ -19,6 +19,11 @@ class PaidEntity(StrEnum):
     PICTURES_COUNTER_REFRESH = auto()
 
 
+class PaymentType(StrEnum):
+    RECURRENT = auto()
+    ONE_TIME = auto()
+
+
 class MenuButtons(StrEnum):
     YES = auto()
     NO = auto()

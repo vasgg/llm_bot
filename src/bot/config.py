@@ -1,4 +1,6 @@
-from pydantic import SecretStr
+from functools import cache
+
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings
 
 from bot.internal.enums import Stage
@@ -6,8 +8,8 @@ from bot.internal.helpers import assign_config_dict
 
 
 class BotConfig(BaseSettings):
-    ADMINS: list[int]
     TOKEN: SecretStr
+    ADMINS: list[int]
     SENTRY_DSN: SecretStr | None = None
     CHAT_LOG_ID: int
     UTC_STARTING_MARK: int
@@ -23,6 +25,7 @@ class BotConfig(BaseSettings):
 class ShopConfig(BaseSettings):
     ID: int
     PROVIDER_TOKEN: SecretStr
+    API_KEY: SecretStr
 
     model_config = assign_config_dict(prefix="SHOP_")
 
@@ -63,13 +66,15 @@ class DBConfig(BaseSettings):
 
 
 class Settings(BaseSettings):
-    bot: BotConfig = BotConfig()
-    shop: ShopConfig = ShopConfig()
-    gpt: GPTConfig = GPTConfig()
-    redis: RedisConfig = RedisConfig()
-    db: DBConfig = DBConfig()
+    bot: BotConfig = Field(default_factory=BotConfig)
+    shop: ShopConfig = Field(default_factory=ShopConfig)
+    gpt: GPTConfig = Field(default_factory=GPTConfig)
+    redis: RedisConfig = Field(default_factory=RedisConfig)
+    db: DBConfig = Field(default_factory=DBConfig)
 
     model_config = assign_config_dict()
 
 
-settings = Settings()
+@cache
+def get_settings() -> Settings:
+    return Settings()

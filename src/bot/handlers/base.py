@@ -22,7 +22,11 @@ logger = getLogger(__name__)
 
 @router.message(StateFilter(Form), F.text | F.voice)
 async def form_handler(
-    message: Message, user: User, state: FSMContext, db_session: AsyncSession, openai_client: AIClient
+    message: Message,
+    user: User,
+    state: FSMContext,
+    db_session: AsyncSession,
+    openai_client: AIClient,
 ):
     current_state = await state.get_state()
     field = current_state.split(":")[-1]

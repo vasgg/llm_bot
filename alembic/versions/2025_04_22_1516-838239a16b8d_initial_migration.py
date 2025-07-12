@@ -34,7 +34,12 @@ def upgrade() -> None:
         sa.Column("geography", sa.String(), nullable=True),
         sa.Column("request", sa.String(), nullable=True),
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("tg_id"),
     )
@@ -43,7 +48,12 @@ def upgrade() -> None:
         sa.Column("tg_id", sa.BigInteger(), nullable=False),
         sa.Column("image_count", sa.Integer(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["tg_id"], ["users.tg_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )

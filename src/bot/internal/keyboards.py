@@ -1,4 +1,9 @@
-from aiogram.types import InlineKeyboardMarkup, KeyboardButton, KeyboardButtonRequestUsers, ReplyKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    KeyboardButtonRequestUsers,
+    ReplyKeyboardMarkup,
+)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.internal.callbacks import PaidEntityCallbackFactory
@@ -10,8 +15,14 @@ def subscription_kb(prolong: bool = False) -> InlineKeyboardMarkup:
     month_text = "Продлить на месяц" if prolong else "Месяц"
     year_text = "Продлить на год" if prolong else "Годовая подписка"
     for text, callback in [
-        (month_text, PaidEntityCallbackFactory(entity=PaidEntity.ONE_MONTH_SUBSCRIPTION).pack()),
-        (year_text, PaidEntityCallbackFactory(entity=PaidEntity.ONE_YEAR_SUBSCRIPTION).pack()),
+        (
+            month_text,
+            PaidEntityCallbackFactory(entity=PaidEntity.ONE_MONTH_SUBSCRIPTION).pack(),
+        ),
+        (
+            year_text,
+            PaidEntityCallbackFactory(entity=PaidEntity.ONE_YEAR_SUBSCRIPTION).pack(),
+        ),
     ]:
         kb.button(text=text, callback_data=callback)
     kb.adjust(1)
@@ -30,6 +41,12 @@ def cancel_autopayment_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def autopayment_cancelled_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Отменить автопродление", callback_data="autopayment_cancelled")
+    return kb.as_markup()
+
+
 def refresh_pictures_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(
@@ -40,7 +57,14 @@ def refresh_pictures_kb() -> InlineKeyboardMarkup:
 
 
 contact_kb = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text="Выберите контакт", request_users=KeyboardButtonRequestUsers(request_id=1))]],
+    keyboard=[
+        [
+            KeyboardButton(
+                text="Выберите контакт",
+                request_users=KeyboardButtonRequestUsers(request_id=1),
+            )
+        ]
+    ],
     resize_keyboard=True,
     one_time_keyboard=True,
 )

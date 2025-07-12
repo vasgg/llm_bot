@@ -11,7 +11,7 @@ import uvicorn
 from bot.config import get_settings
 from bot.internal.helpers import setup_logs
 from database.database_connector import get_db
-from routers.webhook import router as webhook_router
+from routers.webhook import router
 
 
 @asynccontextmanager
@@ -40,7 +40,7 @@ app.state: State  # type: ignore
 
 setup_logs("yookassa_webhook")
 
-app.include_router(webhook_router, prefix="/webhook")
+app.include_router(router, prefix="/webhook")
 
 
 def run_main():

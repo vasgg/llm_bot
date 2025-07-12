@@ -11,7 +11,7 @@ import uvicorn
 from bot.config import get_settings
 from bot.internal.helpers import setup_logs
 from database.database_connector import get_db
-from routers.webhook import router
+from webapp.webhook import router
 
 
 @asynccontextmanager
@@ -44,7 +44,7 @@ app.include_router(router, prefix="/webhook")
 
 
 def run_main():
-    uvicorn.run("src.webapp.main:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run("src.webapp.main:app", host="0.0.0.0", port=8080)
 
 
 if __name__ == "__main__":

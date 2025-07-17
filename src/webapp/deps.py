@@ -1,7 +1,7 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
-from fastapi import Request
 from aiogram import Bot
+from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import Settings

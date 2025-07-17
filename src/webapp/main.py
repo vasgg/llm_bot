@@ -1,12 +1,12 @@
 from contextlib import asynccontextmanager
 
+import uvicorn
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from fastapi import FastAPI
 from starlette.datastructures import State
-import uvicorn
 
 from bot.config import get_settings
 from bot.internal.helpers import setup_logs

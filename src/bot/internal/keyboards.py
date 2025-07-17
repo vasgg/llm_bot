@@ -6,8 +6,8 @@ from aiogram.types import (
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.internal.callbacks import PaidEntityCallbackFactory
-from bot.internal.enums import PaidEntity
+from bot.internal.callbacks import PaidEntityCallbackFactory, SubscriptionActionsCallbackFactory
+from bot.internal.enums import PaidEntity, SubscriptionAction
 
 
 def subscription_kb(prolong: bool = False) -> InlineKeyboardMarkup:
@@ -25,6 +25,10 @@ def subscription_kb(prolong: bool = False) -> InlineKeyboardMarkup:
         ),
     ]:
         kb.button(text=text, callback_data=callback)
+    kb.button(
+        text="Подарить годовую подписку",
+        callback_data=SubscriptionActionsCallbackFactory(action=SubscriptionAction.GIFT_SUB).pack(),
+    )
     kb.adjust(1)
     return kb.as_markup()
 
@@ -37,13 +41,24 @@ def payment_link_kb(value: int, url: str) -> InlineKeyboardMarkup:
 
 def cancel_autopayment_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="Отменить автопродление", callback_data="cancel_autopayment")
+    kb.button(
+        text="Отмена подписки",
+        callback_data=SubscriptionActionsCallbackFactory(action=SubscriptionAction.CANCEL_SUB_DIALOG).pack(),
+    )
+    kb.button(
+        text="Подарить годовую подписку",
+        callback_data=SubscriptionActionsCallbackFactory(action=SubscriptionAction.GIFT_SUB).pack(),
+    )
+    kb.adjust(1)
     return kb.as_markup()
 
 
 def autopayment_cancelled_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="Отменить автопродление", callback_data="autopayment_cancelled")
+    kb.button(
+        text="Отменить автопродление",
+        callback_data=SubscriptionActionsCallbackFactory(action=SubscriptionAction.CANCEL_SUB).pack(),
+    )
     return kb.as_markup()
 
 
@@ -56,7 +71,7 @@ def refresh_pictures_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-contact_kb = ReplyKeyboardMarkup(
+share_contact_kb = ReplyKeyboardMarkup(
     keyboard=[
         [
             KeyboardButton(

@@ -1,8 +1,8 @@
+import logging
+import re
 from asyncio import sleep
 from datetime import UTC, datetime, timedelta
-import logging
 from random import randint
-import re
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
@@ -114,32 +114,35 @@ async def daily_routine(
                         await fsm_context.update_data(notified_days=notified_days)
 
                     await sleep(0.1)
-                else:
-                    if days_left == 0:
-                        duration = (
-                            "1 месяц" if user.subscription_duration == PaidEntity.ONE_MONTH_SUBSCRIPTION else "1 год"
-                        )
-                        amount = 390 if user.subscription_duration == PaidEntity.ONE_MONTH_SUBSCRIPTION else 3900
-                        description_text = f"Оплата подписки, длительность: {duration}."
-                        payment = await create_recurrent_payment(
-                            amount,
-                            description_text,
-                            user.tg_id,
-                            user.subscription_duration,
-                            user.payment_method_id,
-                        )
-                        new_payment = Payment(
-                            payment_id=payment.id,
-                            user_tg_id=user.tg_id,
-                            description=description_text,
-                            payment_type=PaymentType.RECURRENT,
-                            price=amount,
-                        )
-                        if payment.status == "succeeded":
-                            logger.info(f"payment for {user} was successful")
-                        else:
-                            logger.error(f"error with payment for {user}: {payment.status}")
-                        session.add(new_payment)
+                elif days_left == 0:
+                    if user.subscription_duration == PaidEntity.ONE_MONTH_SUBSCRIPTION:
+                        duration = "1 месяц"
+                        amount = 390
+                    elif user.subscription_duration == PaidEntity.ONE_YEAR_SUBSCRIPTION:
+                        duration = "1 год"
+                        amount = 3900
+                    else:
+                        return
+                    description_text = f"Оплата подписки, длительность: {duration}."
+                    payment = await create_recurrent_payment(
+                        amount,
+                        description_text,
+                        user.tg_id,
+                        user.subscription_duration,
+                        user.payment_method_id,
+                    )
+                    new_payment = Payment(
+                        payment_id=payment.id,
+                        user_tg_id=user.tg_id,
+                        description=description_text,
+                        payment_type=PaymentType.RECURRENT,
+                        price=amount,
+                    )
+                    if payment.status == "succeeded":
+                        logger.info(f"payment for {user} was successful")
+                    else:
+                        logger.error(f"error with payment for {user}: {payment.status}")
+                    session.add(new_payment)
             await session.commit()
 
 

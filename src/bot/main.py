@@ -1,12 +1,12 @@
-from asyncio import create_task, run
 import logging
+from asyncio import create_task, run
 
+import sentry_sdk
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis
-import sentry_sdk
 from yookassa import Configuration
 
 from bot.ai_client import AIClient

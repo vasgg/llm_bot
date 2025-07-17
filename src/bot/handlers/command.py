@@ -14,7 +14,7 @@ from bot.config import Settings
 from bot.controllers.base import imitate_typing
 from bot.controllers.user import ask_next_question, get_user_counter
 from bot.internal.enums import AIState, Form
-from bot.internal.keyboards import cancel_autopayment_kb, contact_kb, subscription_kb
+from bot.internal.keyboards import cancel_autopayment_kb, subscription_kb
 from bot.internal.lexicon import replies, support_text
 from database.models import User, UserCounters
 

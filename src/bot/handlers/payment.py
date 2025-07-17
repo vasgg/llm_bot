@@ -1,13 +1,13 @@
 from logging import getLogger
 
-from aiogram import F, Router
+from aiogram import Router
 from aiogram.types import CallbackQuery, PreCheckoutQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.controllers.payments import add_payment_to_db, get_subscription_payment
-from bot.internal.callbacks import PaidEntityCallbackFactory
-from bot.internal.enums import PaidEntity
-from bot.internal.keyboards import autopayment_cancelled_kb, payment_link_kb
+from bot.internal.callbacks import PaidEntityCallbackFactory, SubscriptionActionsCallbackFactory
+from bot.internal.enums import PaidEntity, SubscriptionAction
+from bot.internal.keyboards import autopayment_cancelled_kb, payment_link_kb, share_contact_kb
 from bot.internal.lexicon import payment_text
 from database.models import User
 
@@ -50,22 +50,30 @@ async def payment_handler(
     )
 
 
-@router.callback_query(F.data == "cancel_autopayment")
-async def cancel_payment_dialog(callback: CallbackQuery, user: User):
+@router.callback_query(SubscriptionActionsCallbackFactory.filter())
+async def subscription_handler(
+    callback: CallbackQuery,
+    callback_data: SubscriptionActionsCallbackFactory,
+    user: User,
+    db_session: AsyncSession,
+):
     await callback.answer()
     date = user.expired_at.strftime("%d.%m.%Y")
-    await callback.message.answer(
-        text=payment_text["cancel_payment"].format(date=date),
-        reply_markup=autopayment_cancelled_kb(),
-    )
-
-
-@router.callback_query(F.data == "autopayment_cancelled")
-async def cancel_payment_handler(callback: CallbackQuery, user: User):
-    await callback.answer()
-    date = user.expired_at.strftime("%d.%m.%Y")
-    user.is_autopayment_enabled = False
-    user.subscription_duration = None
-    await callback.message.edit_text(
-        text=payment_text["payment_cancelled"].format(date=date),
-    )
+    match callback_data.action:
+        case SubscriptionAction.CANCEL_SUB_DIALOG:
+            await callback.message.answer(
+                text=payment_text["cancel_payment"].format(date=date),
+                reply_markup=autopayment_cancelled_kb(),
+            )
+        case SubscriptionAction.CANCEL_SUB:
+            user.is_autopayment_enabled = False
+            user.subscription_duration = None
+            await callback.message.edit_text(
+                text=payment_text["payment_cancelled"].format(date=date),
+            )
+            db_session.add(user)
+        case SubscriptionAction.GIFT_SUB:
+            await callback.message.answer(
+                text=payment_text["gift_sub"],
+                reply_markup=share_contact_kb,
+            )

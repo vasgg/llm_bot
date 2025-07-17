@@ -4,17 +4,24 @@ from random import choice
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import FSInputFile, Message
+from aiogram.types import FSInputFile, LabeledPrice, Message
 from aiogram.utils.chat_action import ChatActionSender
+from dateutil.relativedelta import relativedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.ai_client import AIClient
+from bot.config import Settings
 from bot.controllers.base import imitate_typing
-from bot.controllers.user import ask_next_question, generate_user_context
+from bot.controllers.user import (
+    ask_next_question,
+    generate_user_context,
+    get_user_from_db_by_tg_id,
+    update_user_expiration,
+)
 from bot.controllers.voice import extract_text_from_message
-from bot.internal.enums import AIState, Form
+from bot.internal.enums import AIState, Form, PaidEntity
 from bot.internal.lexicon import ORDER, REACTIONS, payment_text
-from database.models import User
+from database.models import Payment, User
 
 router = Router()
 logger = getLogger(__name__)
@@ -132,6 +139,55 @@ async def form_handler(
 
 
 @router.message(F.user_shared)
-async def contact_handler(message: Message):
-    contact = message.users_shared
-    await message.answer(f"Вы выбрали пользователя с Telegram user_id: {contact.user_ids}")
+async def contact_handler(message: Message, settings: Settings, db_session: AsyncSession):
+    # await message.delete_reply_markup()
+    contact = message.users_shared.user_ids[0]
+    target_user = await get_user_from_db_by_tg_id(contact, db_session)
+    if not target_user:
+        await message.answer(payment_text["gift_sub_no_user"])
+        return
+    await message.answer_invoice(
+        title="Подписка",
+        description=payment_text["gift_sub_user"].format(target_user.fullname),
+        payload=PaidEntity.ONE_YEAR_GIFT_SUBSCRIPTION + ">" + str(contact),
+        currency="RUB",
+        prices=[LabeledPrice(label="Подписка на год в подарок", amount=3900 * 100)],
+        provider_token=settings.shop.PROVIDER_TOKEN.get_secret_value(),
+    )
+
+
+@router.message(F.successful_payment)
+async def on_successful_payment(
+    message: Message,
+    user: User,
+    settings: Settings,
+    db_session: AsyncSession,
+):
+    payload = message.successful_payment.invoice_payload
+    target_user_id = int(payload.split(">")[1])
+    amount = int(message.successful_payment.total_amount / 100)
+    payment = Payment(
+        payment_id=message.successful_payment.provider_payment_charge_id,
+        user_tg_id=user.tg_id,
+        price=amount,
+        description=payload,
+        is_paid=True,
+    )
+    db_session.add(payment)
+    await db_session.flush()
+    target_user = await get_user_from_db_by_tg_id(target_user_id, db_session)
+    await update_user_expiration(target_user, relativedelta(years=1), db_session)
+    await message.answer(payment_text["gift_sub_report_to_buyer"].format(username=target_user.fullname))
+    await message.bot.send_message(
+        target_user_id,
+        payment_text["gift_sub_report_to_receiver"],
+    )
+    await message.bot.send_message(
+        settings.bot.CHAT_LOG_ID,
+        payment_text["user_gift_payment_log"].format(
+            username=user.fullname,
+            target_username=target_user.fullname,
+            amount=amount,
+        ),
+    )
+    logger.info(f"Successful gift subscription from {user.fullname} to {target_user.fullname}")

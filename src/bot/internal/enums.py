@@ -16,6 +16,7 @@ class AIState(StatesGroup):
 class PaidEntity(StrEnum):
     ONE_MONTH_SUBSCRIPTION = auto()
     ONE_YEAR_SUBSCRIPTION = auto()
+    ONE_YEAR_GIFT_SUBSCRIPTION = auto()
     PICTURES_COUNTER_REFRESH = auto()
 
 
@@ -27,6 +28,12 @@ class PaymentType(StrEnum):
 class MenuButtons(StrEnum):
     YES = auto()
     NO = auto()
+
+
+class SubscriptionAction(StrEnum):
+    CANCEL_SUB_DIALOG = auto()
+    CANCEL_SUB = auto()
+    GIFT_SUB = auto()
 
 
 class SubscriptionStatus(StrEnum):

@@ -107,7 +107,7 @@ async def yookassa_webhook(
                 else:
                     logger.info(f"Successful recurrent payment for user {user.username}: {entity}")
                 await fsm_context.set_data({})
-            else:
+            elif entity == PaidEntity.PICTURES_COUNTER_REFRESH:
                 await reset_user_image_counter(payment.user_tg_id, db_session)
                 await bot.send_photo(
                     payment.user_tg_id,

@@ -2,11 +2,11 @@ from datetime import datetime
 
 from sqlalchemy import (
     BOOLEAN,
+    TIMESTAMP,
     BigInteger,
     DateTime,
     ForeignKey,
     Integer,
-    TIMESTAMP,
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column

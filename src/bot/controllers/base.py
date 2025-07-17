@@ -1,8 +1,8 @@
-import logging
-import re
 from asyncio import sleep
 from datetime import UTC, datetime, timedelta
+import logging
 from random import randint
+import re
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
@@ -85,7 +85,9 @@ async def daily_routine(
             for user in await get_all_users_with_active_subscription(session):
                 days_left = (user.expired_at.date() - utcnow.date()).days
                 if not user.is_autopayment_enabled:
-                    fsm_context = dispatcher.fsm.context(chat_id=user.tg_id, user_id=user.tg_id)
+                    storage = dispatcher.fsm.storage
+                    key = dispatcher.fsm.strategy.get_key(chat_id=user.tg_id, user_id=user.tg_id)
+                    fsm_context = FSMContext(storage=storage, key=key)
                     data = await fsm_context.get_data()
                     notified_days = data.get("notified_days", [])
                     if days_left in (2, 0) and days_left not in notified_days:

@@ -6,6 +6,7 @@ import re
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.base import StorageKey
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,7 +87,9 @@ async def daily_routine(
                 days_left = (user.expired_at.date() - utcnow.date()).days
                 if not user.is_autopayment_enabled:
                     storage = dispatcher.fsm.storage
-                    key = dispatcher.fsm.strategy.get_key(chat_id=user.tg_id, user_id=user.tg_id)
+                    me = await bot.get_me()
+                    bot_id = me.id
+                    key = StorageKey(bot_id=bot_id, chat_id=user.tg_id, user_id=user.tg_id)
                     fsm_context = FSMContext(storage=storage, key=key)
                     data = await fsm_context.get_data()
                     notified_days = data.get("notified_days", [])

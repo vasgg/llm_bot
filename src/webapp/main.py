@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -44,6 +45,7 @@ app.include_router(router, prefix="/webhook")
 
 
 def run_main():
+    logging.info("webapp started")
     uvicorn.run("webapp.main:app", host="0.0.0.0", port=8080)
 
 
